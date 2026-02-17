@@ -1,0 +1,471 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Seguimiento actividades de la mesa de contratación</title>
+    <link rel="stylesheet" href="sidebar.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Sistema de Seguimiento de actividades de la mesa de contratación</h1>
+            
+            
+            <div class="phase-progress">
+                <h3>Progreso por Fases</h3>
+                <div class="phases-grid" id="phasesGrid"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="btnRetroceder" class="btn btn-secondary">
+                <span>◀</span> Retroceder
+            </button>
+            <button id="btnContinuar" class="btn btn-primary">
+                <span>▶</span> Continuar
+            </button>
+            <button id="btnReiniciar" class="btn btn-danger">
+                <span>🔄</span> Reiniciar
+            </button>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <span>✅</span>
+                    <span id="stepCount">0</span> pasos
+                </div>
+                <div class="stat-item">
+                    <span>📊</span>
+                    <span id="progressPercent">0</span>%
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="expediente-container">
+                <div class="expediente-header">
+                <h3>📄 Datos del Expediente</h3>
+                    <div class="expediente-upload-btn">
+                        <input type="file" id="xmlFileInput" accept=".xml">
+                        <label for="xmlFileInput" class="expediente-upload-label">
+                           📄  Cargar XML
+                        </label>
+                    </div>
+                </div>
+                <div class="expediente-info" id="expedienteInfo">
+                    <div class="expediente-grid" id="expedienteGrid"></div>
+                    <div class="expediente-highlights" id="expedienteHighlights"></div>
+                    <div class="expediente-actions">
+                        <button id="btnClearExpediente" class="btn-clear-expediente">
+                            🗑️ Limpiar Datos
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="legend">
+                <h3>📖 Guía de Uso</h3>
+                <div style="line-height: 2;">
+                    <p><strong>📄 Expediente XML:</strong> Carga el XML para ver datos contextuales en cada paso</p>
+                    <p><strong>📍 Paso actual:</strong> Borde morado con animación - haz click para completar</p>
+                    <p><strong>✅ Completados:</strong> Fondo verde</p>
+                    <p><strong>❓ Decisiones:</strong> Fondo amarillo - elige una opción</p>
+                    <p><strong>🔄 Bucles:</strong> Fondo azul - puede repetirse</p>
+                    <p><strong>⚡ Sistema:</strong> Se completan automáticamente</p>
+                    <p><strong>🔹 Separadores:</strong> Indican cambio de fase del proceso</p>
+                    <p><strong>⌨️ Atajos:</strong> Usa ← y → para navegar entre pasos</p>
+                </div>
+            </div>
+
+            <div class="timeline-container">
+                <div class="timeline-header">
+                    <h3> ⏲️Timeline del Proceso</h3>
+                    <button id="btnToggleTimeline" class="timeline-toggle">
+                        <span id="timelineToggleText">Mostrar</span>
+                    </button>
+                </div>
+                <div class="timeline-content" id="timelineContent">
+                    <div class="timeline-stats" id="timelineStats"></div>
+                    <div class="timeline-list" id="timelineList"></div>
+                </div>
+            </div>
+
+            <div id="flowchart"></div>
+        </div>
+    </div>
+
+    <div id="notasModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Notas</h2>
+                <button id="btnCerrarModal" class="close-btn">×</button>
+            </div>
+
+            <div class="form-group">
+                <label for="notasTextarea">Notas y Observaciones:</label>
+                <textarea id="notasTextarea" placeholder="Añade notas sobre este paso..."></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button id="btnGuardarNotas" class="btn btn-primary">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">
+        <span id="toastMessage"></span>
+    </div>
+
+    <script id="plantumlSource" type="text/plain">
+@startuml
+scale 1500 width
+skinparam swimlaneWidth 300
+
+|#8ce7e0ff|OA|
+start
+|OA|
+:FASE 1: APERTURA Y CALIFICACIÓN ADMINISTRATIVA
+Acceder al acto "Apertura y calificación administrativa"
+img:Image_043.png bookmark:bookmark37;
+
+#E34220:Pulsar "Comenzar"
+img:Image_044.png bookmark:bookmark37;
+
+|Sistema|
+#d3e6d2:Habilitar Acciones Específicas del Acto;
+
+|OA|
+#A7D3F2:Revisar lista de ofertas y advertencias
+img:Image_071.png;
+
+if (¿Oferta Retirada/Incluida?) then (Sí)
+    #FFD8A8:Gestionar Ofertas Retiradas o a incluir
+    img:Image_063.png bookmark:bookmark49;
+endif
+
+#E34220:Seleccionar y Pulsar "Descifrar"
+img:Image_121.png;
+
+note right
+    El sistema pedirá las claves de descifrado
+end note
+
+#E34220:Seleccionar y pulsar "Abrir" sobres
+img:Image_215.png;
+
+|Sistema|
+#052b02:Cambiar estado de la documentación a "Disponible";
+
+|OA|
+#A7D3F2:Navegar al Detalle del Licitador;
+#A7D3F2:Revisar pestaña "Validaciones"
+img:Image_071.png;
+
+if (¿Firmas correctas e integridad OK?) then (Sí)
+    #FFB3B3:Continuar;
+else (No)
+    #FFB3B3:Registrar "No cumple" (firma incorrecta)
+    bookmark:bookmark61;
+
+    |Sistema|
+    #c6d8c5:Documento marcado como "Firma subsanable"
+    bookmark:bookmark120;
+
+    |OA|
+endif
+
+repeat
+    #A7D3F2:Acceder al detalle del Requisito de Participación
+    img:Image_102.png;
+
+    if (¿Requisito Subsanable?) then (Sí)
+        #FFD8A8:Seleccionar Calificación "Subsanable"
+        img:Image_218.png;
+        #FFB3B3:Introducir Justificación OBLIGATORIA;
+    else (No)
+        #E34220:Seleccionar "Cumple" / "No Subsanable" / "No Calificado"
+        img:Image_218.png;
+    endif
+
+    #A7D3F2:Pulsar "Guardar" Requisito;
+repeat while (¿Quedan requisitos?) is (Sí)
+-> No;
+
+|Sistema|
+#052b02:Actualizar estado de calificaciones parciales;
+
+|OA|
+#E34220:Pulsar "Calcular";
+#A7D3F2:Registrar Estado Global (Admitido/Excluido);
+#A7D3F2:Guardar;
+
+|Sistema|
+if (¿Documentos subsanables marcados?) then (Sí)
+    #052b02:Activar Proceso de Subsanación;
+
+    |OA|
+    #A7D3F2:Ir a pestaña "Comunicaciones"
+    img:Image_143.png bookmark:bookmark69;
+    #E34220:Seleccionar licitadores y rellenar "Texto del Acuerdo";
+    #E34220:Pulsar "Configurar comunicación"
+    img:Image_145.png;
+    #E34220:Enviar mensaje de Admisión/Exclusión
+    img:Image_146.png;
+
+    |Sistema|
+    #052b02:Publicar requerimiento de subsanación (con plazo);
+
+    |Licitador|
+    #033b14:Recibir notificación y acceder al acto;
+    #FFF3B0:Preparar y cargar documentación requerida;
+
+    |OA|
+    #e0e0e0:⏳ Esperar plazo de subsanación;
+
+    |OA|
+    #FFD8A8:FASE 2: SUBSANACIÓN;
+    #FFD8A8:Acceder al acto "Subsanación"
+    img:Image_043.png bookmark:bookmark37;
+    #FFD8A8:Convocar sesión para la apertura de la documentación subsanada;
+    #FFD8A8:Iniciar sesión para subsanar la documentación;
+    #A7D3F2:Iniciar Acto de Subsanación
+    img:Image_212.png bookmark:bookmark112;
+    #A7D3F2:Descifrar sobre
+    img:Image_215.png;
+    #A7D3F2:Abrir sobre
+    img:Image_215.png;
+    #A7D3F2:Acceder al detalle de las ofertas subsanadas;
+
+    if (¿Subsanación a tiempo?) then (Sí)
+        if (¿Documentación cumple y subsana?) then (Sí)
+            #E34220:Registrar estado "Admitido"
+            img:Image_219.png;
+        else (No)
+            #FFB3B3:Registrar estado "Excluido"
+            por subsanación insuficiente;
+            #E34220:Generar comunicación de exclusión;
+        endif
+    else (No)
+        #FFB3B3:Registrar estado "Excluido"
+        por falta de subsanación;
+        #E34220:Generar comunicación de exclusión;
+    endif
+
+    #A7D3F2:Guardar Calificación Final;
+    #E5D4FF:Cerrar Acto de Subsanación;
+
+    |Sistema|
+    #052b02:Finalizar proceso de subsanación;
+else (No)
+endif
+
+|OA|
+#A7D3F2:Generar informes (opcional);
+#A7D3F2:Gestionar documentación del acto (opcional);
+#E5D4FF:Pulsar "Finalizar"
+img:Image_040.png;
+
+|OA|
+#FFD8A8:FASE 3: APERTURA DE SOBRE DE CRITERIOS;
+
+#A7D3F2:Acceder al acto de Apertura de sobre de Criterios;
+
+if (¿Sobres configurados como cifrados?) then (Sí)
+    #A7D3F2:Pulsar "Descifrar"
+    (Secretario/Presidente/Gestor OA);
+    note right
+        Mediante contraseña o certificado
+        según custodia de claves.
+        Documentación pasa a estado "Descifrada"
+    end note
+else (No)
+    #A7D3F2:Continuar sin descifrado;
+endif
+
+#A7D3F2:Seleccionar ofertas susceptibles de ser abiertas;
+
+if (¿Cumplen requisitos de apertura?) then (Sí)
+    #A7D3F2:Descifrar
+    img:Image_121.png;
+    #E34220:Pulsar "Abrir";
+
+    |Sistema|
+    #052b02:Estado Documentación cambia a "Disponible";
+
+    |OA|
+    #A7D3F2:Acceder a la documentación y consultar contenido;
+    #E34220:Imprimir lista de licitadores (opcional);
+    #E34220:Descargar lista de valoración (opcional);
+    #E34220:Descargar documentación masiva (opcional);
+    #E34220:Retirar Ofertas (opcional);
+    #FFF3B0:Enviar "Otras comunicaciones" (Aclaración, etc.)
+    bookmark:bookmark133;
+    #A7D3F2:Volver a la pantalla del acto;
+    #A7D3F2:Finalizar acto de apertura;
+
+    if (¿Es necesario solicitar un informe para la valoración?) then (Sí)
+        #A7D3F2:Comunicar al Comité de expertos/técnico para que informe;
+        #e0e0e0:⏳ Esperar informe de valoracion;
+    else (No)
+        #A7D3F2:Continuar al siguiente trámite;
+    endif
+else (No)
+    |Sistema|
+    #FFD8A8:Sistema impide apertura
+    (falta custodia o oferta no admitida);
+endif
+
+|OA|
+#FFD8A8:FASE 4: VALORACIÓN DE CRITERIOS;
+#E34220:Acto de valoración de los criterios;
+
+#E34220:Pulsar botón "Comenzar";
+
+#A7D3F2:Acceder al acto "Valoración de Criterios"
+bookmark:bookmark71;
+#E34220:Pulsar "Comenzar";
+
+|Sistema|
+#052b02:Acto iniciado;
+
+|OA|
+#A7D3F2:Visualizar listado de ofertas;
+#A7D3F2:Descargar lista de valoración (opcional);
+
+if (¿Valoración Manual?) then (Sí)
+    repeat
+        #A7D3F2:Acceder al detalle del licitador
+        bookmark:bookmark78;
+        #A7D3F2:Ir a pestaña "Contenido";
+        #E34220:Seleccionar criterio;
+        #A7D3F2:Introducir puntuación normalizada;
+        #A7D3F2:Introducir motivo (opcional);
+
+        if (¿Exclusión necesaria?) then (Sí)
+            #FFD8A8:Modificar estado a "Excluido";
+        endif
+
+        #A7D3F2:Guardar y volver;
+    repeat while (¿Quedan licitadores o criterios?) is (Sí)
+    -> No;
+else (No: Carga Automática)
+    #A7D3F2:Completar Excel de valoraciones
+    bookmark:bookmark79;
+    #E34220:Pulsar "Incorporar valoraciones";
+
+    |Sistema|
+    #052b02:Cargar puntuaciones automáticamente;
+
+    |OA|
+endif
+
+#A7D3F2:Generar informe de valoraciones (opcional);
+#A7D3F2:Publicar documentación (opcional);
+#E5D4FF:Pulsar "Finalizar";
+
+|Sistema|
+#052b02:Actualizar estados y cerrar acto;
+
+|OA|
+#FFD8A8:FASE 5: Mejor valorado;
+
+if (¿Requerimiento por Mesa de Contratación?) then (Sí)
+    note right
+        Este flujo es cuando el requerimiento
+        lo realiza la Mesa de Contratación
+    end note
+
+
+    #A7D3F2:Iniciar "Acto de Mejor Valorado - Requerimiento" img:Image_172.png
+    bookmark:bookmark90;
+    #E34220:Seleccionar licitador;
+    #E34220:Pulsar "Proponer mejor valorado" img:Image_175.png;
+    note right
+
+        #E34220:Inicia envío de comunicación img:Image_176.png;
+        de requerimiento
+    end note
+
+    E34220:Rellenar texto del acuerdo;
+    E34220:guardar;
+    E34220: Comunicaciones: Requerimieto de documentación img:Image_177.png;
+    |Licitador|
+    #FFF3B0:Remitir documentación requerida
+    (Vía Plataforma);
+
+
+    |OA|
+    #e0e0e0:⏳ Esperar plazo de presentación;
+    #FFD8A8:FASE 6: Apertura requerimiento;
+    #A7D3F2:Acto de Apertura de Requerimiento
+    de Documentación img:Image_178.png
+    bookmark:bookmark96;
+    #E34220:Iniciar acto;
+    #E34220:Descifrar sobres de requerimiento;
+    #E34220:Abrir sobres de requerimiento;
+
+    |Sistema|
+    #052b02:Documentación en estado "Disponible";
+
+    |OA|
+    #A7D3F2:Acceder y valorar documentación remitida img:Image_184.png;
+    #A7D3F2:Acceder al contenido img:Image_185.png;
+    #A7D3F2:Volver a acto principal;
+
+    if (¿Documentación admitida?) then (Sí)
+        #A7D3F2:Continuar con el proceso;
+    else (No)
+        #FFB3B3:Cambiar estado del licitador a "Excluido";
+        #E34220:Notificar exclusión;
+
+
+
+    endif
+    |OA|
+    #FFD8A8:FASE 7: Propuesta de adjudicación;
+
+
+
+
+
+
+    #A7D3F2:Iniciar Acto de Propuesta de Adjudicación
+    img:Image_160.png bookmark:bookmark80;
+    if (¿Quedan licitadores válidos?) then (Sí)
+        #A7D3F2:Proponer adjudicatario img:Image_163.png ;
+    else (No)
+        #FFD8A8:Proponer Desierto img:Image_163.png;
+    endif
+
+
+
+    #E34220:Pulsar "Proponer adjudicación y avisar al órgano responsable" img:Image_168.png;
+    #E34220:Marcar "Enviar Informe al Órgano de Contratación" (opcional);
+    #A7D3F2:Generar Informe de Propuesta de Adjudicación (opcional) img:Image_165.png
+    bookmark:bookmark87;
+    #E5D4FF:Finalizar;
+
+    |Sistema|
+    #052b02:Notificar al Órgano de Contratación (OC)
+    la propuesta/informe;
+else (No: Requerimiento por OC)
+    note right
+        Flujo cuando el requerimiento
+        lo realiza el Órgano de Contratación
+    end note
+endif
+
+|Sistema|
+#052b02:Finalizar proceso y habilitar siguiente acto;
+
+stop
+@enduml
+
+
+
+
+    </script>
+
+    <script src="sidebar.js"></script>
+</body>
+</html>

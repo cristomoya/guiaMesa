@@ -1,0 +1,29 @@
+{
+  "manifest_version": 2,
+  "name": "Ayuda mesa de contratación",
+  "version": "1.1.0",
+  "description": "Diagrama interactivo de seguimiento de licitación como extensión de barra lateral para Firefox.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "mesa@local",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": {
+        "required": ["none"],
+        "optional": []
+      }
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "96": "icons/icon-96.png"
+  },
+  "sidebar_action": {
+    "default_title": "Seguimiento Licitación",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png"
+    },
+    "default_panel": "sidebar.html"
+  }
+}
