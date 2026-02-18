@@ -119,69 +119,98 @@
     // ── Widget de temporizador para un nodo ──────────────────
 
     function crearWidget(stepId, tipo, nodoEl) {
-        // Evitar duplicados
         if (nodoEl.querySelector('.pt-widget')) return;
-
         const guardado = getPlazoStep(stepId);
         const xmlFecha = fechaXML();
-
         const widget = document.createElement('div');
         widget.className = 'pt-widget';
         widget.dataset.stepId = stepId;
-
-        // Etiqueta según tipo
         const etiquetas = {
-            subsanacion:  '📌 Plazo de subsanación',
-            presentacion: '📌 Plazo de presentación',
-            generico:     '📌 Plazo de espera'
+            subsanacion: 'Plazo de subsanacion',
+            presentacion: 'Plazo de presentacion',
+            generico: 'Plazo de espera'
         };
         const labelTipo = etiquetas[tipo] || etiquetas.generico;
-
-        // Sugerencia de fecha del XML
-        const sugerenciaHTML = xmlFecha && !guardado
-            ? `<button class="pt-btn pt-btn-sugerencia" data-fecha="${xmlFecha}">Usar fecha del XML (${xmlFecha})</button>` : '';
-
-        widget.innerHTML = `
-            <div class="pt-header">
-                <span class="pt-tipo">${labelTipo}</span>
-                <span class="pt-countdown" id="ptCd_${stepId}"></span>
-            </div>
-            <div class="pt-config" id="ptConfig_${stepId}">
-                <div class="pt-row">
-                    <label class="pt-lbl">Fecha fin del plazo:</label>
-                    <input type="date" class="pt-date-input" id="ptDate_${stepId}" value="${guardado ? guardado.fechaFin.slice(0, 10) : (xmlFecha || '')}">
-                    <input type="time" class="pt-time-input" id="ptTime_${stepId}" value="${guardado ? new Date(guardado.fechaFin).toTimeString().slice(0,5) : '23:59'}">
-                </div>
-                <div class="pt-row">
-                    <input type="text" class="pt-label-input" id="ptLabel_${stepId}" placeholder="Etiqueta (ej: Plazo subsanación Exp. 2024/001)" value="${guardado ? guardado.label || '' : ''}">
-                </div>
-                <div class="pt-actions">
-                    ${sugerenciaHTML}
-                    <button class="pt-btn pt-btn-primary" id="ptBtnGuardar_${stepId}">⏱ Activar temporizador</button>
-                    ${guardado ? `<button class="pt-btn pt-btn-danger" id="ptBtnBorrar_${stepId}">🗑 Eliminar</button>` : ''}
-                </div>
-            </div>
-        `;
-
+        const header = document.createElement('div');
+        header.className = 'pt-header';
+        const tipoEl = document.createElement('span');
+        tipoEl.className = 'pt-tipo';
+        tipoEl.textContent = labelTipo;
+        const countdown = document.createElement('span');
+        countdown.className = 'pt-countdown';
+        countdown.id = `ptCd_${stepId}`;
+        header.appendChild(tipoEl);
+        header.appendChild(countdown);
+        const config = document.createElement('div');
+        config.className = 'pt-config';
+        config.id = `ptConfig_${stepId}`;
+        const rowDate = document.createElement('div');
+        rowDate.className = 'pt-row';
+        const lbl = document.createElement('label');
+        lbl.className = 'pt-lbl';
+        lbl.textContent = 'Fecha fin del plazo:';
+        const dateInput = document.createElement('input');
+        dateInput.type = 'date';
+        dateInput.className = 'pt-date-input';
+        dateInput.id = `ptDate_${stepId}`;
+        dateInput.value = guardado ? guardado.fechaFin.slice(0, 10) : (xmlFecha || '');
+        const timeInput = document.createElement('input');
+        timeInput.type = 'time';
+        timeInput.className = 'pt-time-input';
+        timeInput.id = `ptTime_${stepId}`;
+        timeInput.value = guardado ? new Date(guardado.fechaFin).toTimeString().slice(0, 5) : '23:59';
+        rowDate.appendChild(lbl);
+        rowDate.appendChild(dateInput);
+        rowDate.appendChild(timeInput);
+        const rowLabel = document.createElement('div');
+        rowLabel.className = 'pt-row';
+        const labelInput = document.createElement('input');
+        labelInput.type = 'text';
+        labelInput.className = 'pt-label-input';
+        labelInput.id = `ptLabel_${stepId}`;
+        labelInput.placeholder = 'Etiqueta (ej: Plazo subsanacion Exp. 2024/001)';
+        labelInput.value = guardado ? (guardado.label || '') : '';
+        rowLabel.appendChild(labelInput);
+        const actions = document.createElement('div');
+        actions.className = 'pt-actions';
+        if (xmlFecha && !guardado) {
+            const btnSug = document.createElement('button');
+            btnSug.className = 'pt-btn pt-btn-sugerencia';
+            btnSug.dataset.fecha = xmlFecha;
+            btnSug.textContent = `Usar fecha del XML (${xmlFecha})`;
+            actions.appendChild(btnSug);
+        }
+        const btnGuardar = document.createElement('button');
+        btnGuardar.className = 'pt-btn pt-btn-primary';
+        btnGuardar.id = `ptBtnGuardar_${stepId}`;
+        btnGuardar.textContent = 'Activar temporizador';
+        actions.appendChild(btnGuardar);
+        if (guardado) {
+            const btnBorrar = document.createElement('button');
+            btnBorrar.className = 'pt-btn pt-btn-danger';
+            btnBorrar.id = `ptBtnBorrar_${stepId}`;
+            btnBorrar.textContent = 'Eliminar';
+            actions.appendChild(btnBorrar);
+        }
+        config.appendChild(rowDate);
+        config.appendChild(rowLabel);
+        config.appendChild(actions);
+        widget.appendChild(header);
+        widget.appendChild(config);
         nodoEl.appendChild(widget);
-
-        // Botón guardar
         widget.querySelector(`#ptBtnGuardar_${stepId}`).addEventListener('click', () => {
-            const dateVal  = widget.querySelector(`#ptDate_${stepId}`).value;
-            const timeVal  = widget.querySelector(`#ptTime_${stepId}`).value || '23:59';
+            const dateVal = widget.querySelector(`#ptDate_${stepId}`).value;
+            const timeVal = widget.querySelector(`#ptTime_${stepId}`).value || '23:59';
             const labelVal = widget.querySelector(`#ptLabel_${stepId}`).value.trim();
             if (!dateVal) {
-                ptAlert(widget, '⚠️ Introduce una fecha para el plazo');
+                ptAlert(widget, 'Introduce una fecha para el plazo');
                 return;
             }
             const fechaFin = `${dateVal}T${timeVal}:00`;
             setPlazoStep(stepId, fechaFin, labelVal);
-            // Refresh del widget
             nodoEl.querySelector('.pt-widget').remove();
             crearWidget(stepId, tipo, nodoEl);
         });
-
-        // Botón borrar
         const btnBorrar = widget.querySelector(`#ptBtnBorrar_${stepId}`);
         if (btnBorrar) {
             btnBorrar.addEventListener('click', () => {
@@ -190,21 +219,16 @@
                 crearWidget(stepId, tipo, nodoEl);
             });
         }
-
-        // Botón sugerencia XML
         const btnSug = widget.querySelector('.pt-btn-sugerencia');
         if (btnSug) {
             btnSug.addEventListener('click', () => {
                 widget.querySelector(`#ptDate_${stepId}`).value = btnSug.dataset.fecha;
             });
         }
-
-        // Iniciar cuenta atrás si hay plazo guardado
         if (guardado) {
             iniciarCuentaAtras(stepId, guardado.fechaFin, widget);
         }
     }
-
     function ptAlert(widget, msg) {
         let alerta = widget.querySelector('.pt-alerta');
         if (!alerta) {

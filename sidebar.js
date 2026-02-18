@@ -933,6 +933,8 @@
                     }
 
                     expedienteData = parseExpedienteXML(xmlDoc);
+                    expedienteData.__xmlFileName = file.name || '';
+                    expedienteData.__xmlLoadedAt = Date.now();
                     saveExpedienteData();
                     displayExpedienteInfo();
                     showToast('✅ Expediente cargado correctamente');
@@ -1245,7 +1247,19 @@
             if (saved) {
                 expedienteData = JSON.parse(saved);
                 displayExpedienteInfo();
+                return;
             }
+
+            // Si el expediente activo no tiene XML asociado, limpiar estado/UI.
+            expedienteData = null;
+            const infoContainer = document.getElementById('expedienteInfo');
+            if (infoContainer) infoContainer.classList.remove('active');
+            const gridContainer = document.getElementById('expedienteGrid');
+            if (gridContainer) gridContainer.innerHTML = '';
+            const highlightsContainer = document.getElementById('expedienteHighlights');
+            if (highlightsContainer) highlightsContainer.innerHTML = '';
+            const fileInput = document.getElementById('xmlFileInput');
+            if (fileInput) fileInput.value = '';
         }
 
         function clearExpediente() {

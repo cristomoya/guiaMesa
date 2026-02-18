@@ -50,9 +50,9 @@
 
         _activeId = id;
 
-        // Limpiar claves legacy para no confundir
-        localStorage.removeItem(LEGACY_FLOW_KEY);
-        localStorage.removeItem(LEGACY_DATA_KEY);
+        // Limpiar claves legacy reales sin pasar por el interceptor de expediente.
+        _origRemoveItem.call(localStorage, LEGACY_FLOW_KEY);
+        _origRemoveItem.call(localStorage, LEGACY_DATA_KEY);
     }
 
     // ─────────────────────────────────────────────────────────
@@ -104,6 +104,7 @@
         }
         if (key === LEGACY_DATA_KEY && _activeId) {
             try { ExpedienteManager.saveXMLData(_activeId, JSON.parse(value)); } catch (e) { /* ignorar */ }
+            if (document.getElementById('emPanel')) refreshPanel();
             return;
         }
         _origSetItem.call(this, key, value);
@@ -112,6 +113,7 @@
     Storage.prototype.removeItem = function (key) {
         if (key === LEGACY_DATA_KEY && _activeId) {
             ExpedienteManager.clearXMLData(_activeId);
+            if (document.getElementById('emPanel')) refreshPanel();
             return;
         }
         _origRemoveItem.call(this, key);
@@ -213,44 +215,87 @@
         const container = document.getElementById('emList');
         if (!container) return;
         container.innerHTML = '';
-
         const list = ExpedienteManager.getList();
         if (list.length === 0) {
             container.innerHTML = '<div class="em-empty">Sin expedientes guardados</div>';
             return;
         }
-
         list.forEach(exp => {
             const isActive = exp.id === _activeId;
             const flowState = ExpedienteManager.loadFlowState(exp.id);
-            // Calcular total de pasos accediendo al flowDefinition global de sidebar.js
             const total = (typeof flowDefinition !== 'undefined') ? flowDefinition.length : 0;
             const pct = ExpedienteManager.calcProgress(flowState, total);
             const checks = ExpedienteManager.getCheckpoints(exp.id).length;
-
             const item = document.createElement('div');
             item.className = 'em-item' + (isActive ? ' em-item-active' : '');
-            item.innerHTML = `
-                <div class="em-item-main" data-id="${exp.id}">
-                    <div class="em-item-name" title="${exp.nombre}">${exp.nombre}</div>
-                    <div class="em-item-meta">
-                        ${exp.ref ? `<span class="em-ref">${exp.ref}</span>` : ''}
-                        <span class="em-pct">${pct}%</span>
-                        ${checks ? `<span class="em-cp-badge">📌 ${checks}</span>` : ''}
-                    </div>
-                    <div class="em-progress-bar"><div class="em-progress-fill" style="width:${pct}%"></div></div>
-                </div>
-                <div class="em-item-actions">
-                    <button class="em-btn em-btn-xs" data-action="rename" data-id="${exp.id}" title="Renombrar">✏️</button>
-                    <button class="em-btn em-btn-xs em-btn-danger" data-action="delete" data-id="${exp.id}" title="Eliminar"  ${list.length === 1 ? 'disabled' : ''}>🗑️</button>
-                </div>
-            `;
-
-            // Activar al hacer click en la parte principal
-            item.querySelector('.em-item-main').addEventListener('click', () => activarExpediente(exp.id));
-
-            // Botones
-            item.querySelector('[data-action="rename"]').addEventListener('click', (e) => {
+            const itemMain = document.createElement('div');
+            itemMain.className = 'em-item-main';
+            itemMain.dataset.id = exp.id;
+            const itemName = document.createElement('div');
+            itemName.className = 'em-item-name';
+            itemName.title = exp.nombre;
+            itemName.textContent = exp.nombre;
+            const itemMeta = document.createElement('div');
+            itemMeta.className = 'em-item-meta';
+            if (exp.ref) {
+                const ref = document.createElement('span');
+                ref.className = 'em-ref';
+                ref.textContent = exp.ref;
+                itemMeta.appendChild(ref);
+            }
+            const pctSpan = document.createElement('span');
+            pctSpan.className = 'em-pct';
+            pctSpan.textContent = `${pct}%`;
+            itemMeta.appendChild(pctSpan);
+            if (checks) {
+                const cpBadge = document.createElement('span');
+                cpBadge.className = 'em-cp-badge';
+                cpBadge.textContent = `CP ${checks}`;
+                itemMeta.appendChild(cpBadge);
+            }
+            if (exp.xmlBinding && (exp.xmlBinding.fileName || exp.xmlBinding.contractFolderId)) {
+                const xmlBadge = document.createElement('span');
+                xmlBadge.className = 'em-xml-badge';
+                const xmlLabel = exp.xmlBinding.fileName || exp.xmlBinding.contractFolderId;
+                xmlBadge.title = `XML asociado: ${xmlLabel}`;
+                xmlBadge.textContent = `XML ${xmlLabel}`;
+                itemMeta.appendChild(xmlBadge);
+            } else {
+                const xmlMissing = document.createElement('span');
+                xmlMissing.className = 'em-xml-missing';
+                xmlMissing.textContent = 'Sin XML';
+                itemMeta.appendChild(xmlMissing);
+            }
+            const progressBar = document.createElement('div');
+            progressBar.className = 'em-progress-bar';
+            const progressFill = document.createElement('div');
+            progressFill.className = 'em-progress-fill';
+            progressFill.style.width = `${pct}%`;
+            progressBar.appendChild(progressFill);
+            itemMain.appendChild(itemName);
+            itemMain.appendChild(itemMeta);
+            itemMain.appendChild(progressBar);
+            const itemActions = document.createElement('div');
+            itemActions.className = 'em-item-actions';
+            const renameBtn = document.createElement('button');
+            renameBtn.className = 'em-btn em-btn-xs';
+            renameBtn.dataset.action = 'rename';
+            renameBtn.dataset.id = exp.id;
+            renameBtn.title = 'Renombrar';
+            renameBtn.textContent = 'Renombrar';
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'em-btn em-btn-xs em-btn-danger';
+            deleteBtn.dataset.action = 'delete';
+            deleteBtn.dataset.id = exp.id;
+            deleteBtn.title = 'Eliminar';
+            deleteBtn.textContent = 'Eliminar';
+            deleteBtn.disabled = list.length === 1;
+            itemActions.appendChild(renameBtn);
+            itemActions.appendChild(deleteBtn);
+            item.appendChild(itemMain);
+            item.appendChild(itemActions);
+            itemMain.addEventListener('click', () => activarExpediente(exp.id));
+            renameBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const nuevo = prompt('Nuevo nombre:', exp.nombre);
                 if (nuevo) {
@@ -258,9 +303,9 @@
                     refreshPanel();
                 }
             });
-            item.querySelector('[data-action="delete"]').addEventListener('click', (e) => {
+            deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (confirm(`¿Eliminar el expediente "${exp.nombre}" y todos sus datos?\nEsta acción no se puede deshacer.`)) {
+                if (confirm(`Eliminar el expediente "${exp.nombre}" y todos sus datos?\nEsta accion no se puede deshacer.`)) {
                     ExpedienteManager.deleteExpediente(exp.id);
                     if (_activeId === exp.id) {
                         _activeId = ExpedienteManager.getActiveId();
@@ -269,7 +314,6 @@
                     refreshPanel();
                 }
             });
-
             container.appendChild(item);
         });
     }
@@ -280,43 +324,54 @@
         const container = document.getElementById('emCpList');
         if (!container) return;
         container.innerHTML = '';
-
         const checks = ExpedienteManager.getCheckpoints(_activeId);
         if (checks.length === 0) {
             container.innerHTML = '<div class="em-empty">Sin puntos de control guardados</div>';
             return;
         }
-
         checks.forEach(cp => {
             const fecha = new Date(cp.savedAt).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
             const total = (typeof flowDefinition !== 'undefined') ? flowDefinition.length : 0;
             const pct = ExpedienteManager.calcProgress(cp.fluidState, total);
-
             const item = document.createElement('div');
             item.className = 'em-cp-item';
-            item.innerHTML = `
-                <div class="em-cp-info">
-                    <div class="em-cp-name">${cp.label}</div>
-                    <div class="em-cp-meta">${fecha} &middot; Paso ${cp.step + 1} &middot; ${pct}%</div>
-                </div>
-                <div class="em-cp-actions">
-                    <button class="em-btn em-btn-xs em-btn-restore" data-cp="${cp.cpId}" title="Restaurar este punto">↩ Restaurar</button>
-                    <button class="em-btn em-btn-xs em-btn-danger" data-cp="${cp.cpId}" data-action="del" title="Eliminar punto">🗑️</button>
-                </div>
-            `;
-
-            item.querySelector('.em-btn-restore').addEventListener('click', () => restaurarPuntoControl(cp.cpId));
-            item.querySelector('[data-action="del"]').addEventListener('click', () => {
-                if (confirm(`¿Eliminar el punto de control "${cp.label}"?`)) {
+            const cpInfo = document.createElement('div');
+            cpInfo.className = 'em-cp-info';
+            const cpName = document.createElement('div');
+            cpName.className = 'em-cp-name';
+            cpName.textContent = cp.label;
+            const cpMeta = document.createElement('div');
+            cpMeta.className = 'em-cp-meta';
+            cpMeta.textContent = `${fecha} - Paso ${cp.step + 1} - ${pct}%`;
+            cpInfo.appendChild(cpName);
+            cpInfo.appendChild(cpMeta);
+            const cpActions = document.createElement('div');
+            cpActions.className = 'em-cp-actions';
+            const restoreBtn = document.createElement('button');
+            restoreBtn.className = 'em-btn em-btn-xs em-btn-restore';
+            restoreBtn.dataset.cp = cp.cpId;
+            restoreBtn.title = 'Restaurar este punto';
+            restoreBtn.textContent = 'Restaurar';
+            const delBtn = document.createElement('button');
+            delBtn.className = 'em-btn em-btn-xs em-btn-danger';
+            delBtn.dataset.cp = cp.cpId;
+            delBtn.dataset.action = 'del';
+            delBtn.title = 'Eliminar punto';
+            delBtn.textContent = 'Eliminar';
+            cpActions.appendChild(restoreBtn);
+            cpActions.appendChild(delBtn);
+            item.appendChild(cpInfo);
+            item.appendChild(cpActions);
+            restoreBtn.addEventListener('click', () => restaurarPuntoControl(cp.cpId));
+            delBtn.addEventListener('click', () => {
+                if (confirm(`Eliminar el punto de control "${cp.label}"?`)) {
                     ExpedienteManager.deleteCheckpoint(_activeId, cp.cpId);
                     renderCheckpointList();
                 }
             });
-
             container.appendChild(item);
         });
     }
-
     // ── Acciones ─────────────────────────────────────────────
 
     function crearNuevoExpediente() {
@@ -324,6 +379,18 @@
         if (!nombre || !nombre.trim()) return;
         const ref = prompt('Referencia/número de expediente (opcional):') || '';
         const id = ExpedienteManager.createExpediente(nombre, ref);
+
+        // Inicializar el nuevo expediente siempre en estado limpio.
+        ExpedienteManager.saveFlowState(id, {
+            currentStep: 0,
+            completedSteps: [],
+            decisions: {},
+            stepNotes: {},
+            stepTimestamps: {},
+            stepStartTimes: {}
+        });
+        ExpedienteManager.clearXMLData(id);
+
         activarExpediente(id);
     }
 
@@ -505,6 +572,24 @@
         .em-cp-badge {
             color: #d97706;
         }
+        .em-xml-badge {
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            background: #dcfce7;
+            color: #166534;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        .em-xml-missing {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
         .em-progress-bar {
             margin-top: 5px;
             height: 4px;
@@ -663,3 +748,4 @@
     init();
 
 })();
+
