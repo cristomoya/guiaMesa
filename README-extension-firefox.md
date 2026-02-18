@@ -1,12 +1,12 @@
-﻿# MANUAL DE USUARIO FINAL
+# MANUAL DE USUARIO FINAL
 ## Extension Firefox: Seguimiento de actividades de la mesa de contratacion
 
 ### Portada del documento
 - Codigo de documento: `MAN-EXT-FF-001`
-- Version: `1.0.0`
+- Version: `1.2.0`
 - Estado: `Vigente`
 - Fecha de emision: `17/02/2026`
-- Fecha de ultima revision: `17/02/2026`
+- Fecha de ultima revision: `18/02/2026`
 - Sistema: `Extension Firefox - Barra lateral`
 - Archivo: `README-extension-firefox.md`
 
@@ -18,6 +18,8 @@
 ### Control de cambios
 | Version | Fecha       | Autor            | Descripcion del cambio |
 |---------|-------------|------------------|------------------------|
+| 1.2.0   | 18/02/2026  | Equipo funcional | Se incorpora gestion multi-expediente, puntos de control y temporizadores configurables de plazos |
+| 1.1.0   | 18/02/2026  | Equipo funcional | Actualizacion del manual con timeline detallada, autocompletado de pasos del sistema y detalle ampliado de expediente XML |
 | 1.0.0   | 17/02/2026  | Equipo funcional | Emision inicial del manual institucional |
 
 ## 1. Objeto
@@ -30,6 +32,9 @@ Incluye:
 - Instalacion temporal para uso interno.
 - Ejecucion de la operativa diaria.
 - Gestion de datos de expediente XML.
+- Gestion de multiples expedientes en paralelo.
+- Puntos de control para guardar/restaurar estado.
+- Temporizadores de plazos en pasos de espera.
 - Seguimiento del avance y tiempos.
 - Recuperacion ante errores funcionales.
 
@@ -38,11 +43,14 @@ Incluye:
 - `sidebar.html`
 - `sidebar.css`
 - `sidebar.js`
+- `expediente-manager.js`
+- `sidebar-patch.js`
+- `plazo-timer.js`
 - `guia.html`
 - `images/`
 
 ## 4. Requisitos previos
-- Navegador Firefox compatible con `manifest_version: 2`.
+- Navegador Firefox version `142.0` o superior (segun `strict_min_version`).
 - Disponibilidad de todos los archivos de la extension en una misma carpeta.
 - Permiso de usuario para cargar complementos temporales en Firefox.
 
@@ -56,13 +64,15 @@ Incluye:
 ## 5.2 Validacion inicial
 1. Confirmar que se visualiza el panel lateral.
 2. Confirmar carga del diagrama de pasos.
-3. Verificar disponibilidad de controles: `Retroceder`, `Continuar`, `Reiniciar`, `Cargar XML`, `Limpiar Datos`.
+3. Verificar disponibilidad de controles: `Retroceder`, `Continuar`, `Reiniciar`, `Cargar XML`, `Limpiar Datos`, `Mostrar/Ocultar` (timeline).
 
 ## 6. Operacion funcional
 ## 6.1 Navegacion principal
 - `Continuar`: completa el paso actual y avanza al siguiente.
 - `Retroceder`: retorna al paso visible anterior.
 - `Reiniciar`: reinicia la secuencia operativa.
+- Click en el paso actual: marca el paso como completado y avanza (solo pasos manuales).
+- Pasos actor `Sistema`: se completan automaticamente.
 
 Atajos:
 - `->` continuar
@@ -79,6 +89,7 @@ Atajos:
 ## 6.3 Uso de notas
 - Cada paso activo o completado puede registrar notas.
 - Las notas se conservan para sesiones posteriores.
+- Edicion de notas mediante modal (`Guardar`).
 
 ## 6.4 Uso de referencias PLACSP
 - Si el paso dispone de referencia, usar `Ver en PLACSP`.
@@ -88,22 +99,39 @@ Atajos:
 ## 7.1 Carga de datos
 1. Pulsar `Cargar XML`.
 2. Seleccionar fichero `.xml`.
-3. Verificar que aparecen datos de contexto del expediente.
+3. Verificar que aparecen datos de contexto del expediente en `Datos del Expediente`.
+4. Verificar inyeccion de contexto en el paso actual (si aplica al acto).
 
 ## 7.2 Limpieza de datos
 1. Pulsar `Limpiar Datos`.
 2. Confirmar visualmente la eliminacion de datos de expediente.
 
+## 7.3 Gestion multi-expediente
+- Panel `Expedientes` para crear, activar, renombrar y eliminar expedientes.
+- Cada expediente conserva su propio progreso, decisiones, notas, timeline y XML.
+- Al cambiar de expediente se recarga automaticamente su estado.
+
+## 7.4 Puntos de control
+- En el panel `Expedientes`, usar `Guardar` en `Puntos de control`.
+- Cada punto guarda estado del flujo y datos XML del expediente activo.
+- Opcion `Restaurar` para volver a un punto guardado.
+
 ## 8. Seguimiento y medicion
 ## 8.1 Timeline
 - `Mostrar/Ocultar` despliega o contrae la timeline.
-- Presenta estado de ejecucion por paso.
+- Presenta estado de ejecucion por paso y separadores por fase.
 
 ## 8.2 Indicadores disponibles
-- Pasos completados.
-- Porcentaje de avance.
-- Inicio y fin por paso.
-- Duracion por actividad cuando aplica.
+- `Tiempo Total`.
+- `Paso Actual`.
+- `Pasos Completados`.
+- `Fecha Inicio`.
+
+## 8.3 Temporizadores de plazo
+- En pasos tipo `Esperar plazo`, se muestra un widget de temporizador.
+- Permite configurar fecha/hora fin y etiqueta del plazo.
+- Si existe `Fecha Limite` en XML, puede usarse como sugerencia.
+- El estado visual cambia por nivel: normal, proximo, urgente, critico o expirado.
 
 ## 9. Persistencia y continuidad
 La extension conserva en almacenamiento local:
@@ -112,6 +140,7 @@ La extension conserva en almacenamiento local:
 - Decisiones seleccionadas.
 - Notas.
 - Tiempos de ejecucion.
+- Marcas temporales de inicio y fin por paso.
 - Datos de expediente XML.
 
 Procedimiento de reinicio completo:
@@ -129,8 +158,9 @@ Procedimiento de reinicio completo:
 
 ## 10.3 Error al cargar XML
 1. Confirmar extension `.xml`.
-2. Validar estructura del XML.
-3. Probar con un XML alternativo.
+2. Validar que el XML no tenga errores de parseo.
+3. Validar estructura del XML de expediente PLACSP.
+4. Probar con un XML alternativo.
 
 ## 10.4 Estado inconsistente del flujo
 1. Pulsar `Reiniciar`.
@@ -148,3 +178,7 @@ Archivos principales:
 - `sidebar.html`: estructura de interfaz y flujo.
 - `sidebar.css`: estilos de visualizacion.
 - `sidebar.js`: logica funcional y persistencia.
+- `guia.js`: utilidades auxiliares de la guia.
+- `expediente-manager.js`: gestion de expedientes, estados y checkpoints.
+- `sidebar-patch.js`: integracion de panel multi-expediente y migracion de datos legacy.
+- `plazo-timer.js`: temporizadores de pasos de espera y cuenta atras.
