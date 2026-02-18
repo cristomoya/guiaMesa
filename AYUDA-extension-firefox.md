@@ -3,7 +3,7 @@
 
 ### Portada del documento
 - Codigo de documento: `MAN-EXT-FF-001`
-- Version: `1.2.0`
+- Version: `1.3.0`
 - Estado: `Vigente`
 - Fecha de emision: `17/02/2026`
 - Fecha de ultima revision: `18/02/2026`
@@ -18,6 +18,7 @@
 ### Control de cambios
 | Version | Fecha       | Autor            | Descripcion del cambio |
 |---------|-------------|------------------|------------------------|
+| 1.3.0   | 18/02/2026  | Equipo funcional | Se incorpora gestion de diagramas .puml por expediente, optimizacion de carga y aplicacion dinamica del flujo |
 | 1.2.0   | 18/02/2026  | Equipo funcional | Se incorpora gestion multi-expediente, puntos de control y temporizadores configurables de plazos |
 | 1.1.0   | 18/02/2026  | Equipo funcional | Actualizacion del manual con timeline detallada, autocompletado de pasos del sistema y detalle ampliado de expediente XML |
 | 1.0.0   | 17/02/2026  | Equipo funcional | Emision inicial del manual institucional |
@@ -33,6 +34,7 @@ Incluye:
 - Ejecucion de la operativa diaria.
 - Gestion de datos de expediente XML.
 - Gestion de multiples expedientes en paralelo.
+- Gestion de diagramas `.puml` por expediente.
 - Puntos de control para guardar/restaurar estado.
 - Temporizadores de plazos en pasos de espera.
 - Seguimiento del avance y tiempos.
@@ -46,6 +48,7 @@ Incluye:
 - `expediente-manager.js`
 - `sidebar-patch.js`
 - `plazo-timer.js`
+- `diagram-manager.js`
 - `guia.html`
 - `images/`
 
@@ -65,6 +68,7 @@ Incluye:
 1. Confirmar que se visualiza el panel lateral.
 2. Confirmar carga del diagrama de pasos.
 3. Verificar disponibilidad de controles: `Retroceder`, `Continuar`, `Reiniciar`, `Cargar XML`, `Limpiar Datos`, `Mostrar/Ocultar` (timeline).
+4. Verificar panel `Diagrama de flujo` para carga y seleccion de `.puml`.
 
 ## 6. Operacion funcional
 ## 6.1 Navegacion principal
@@ -133,6 +137,12 @@ Atajos:
 - Si existe `Fecha Limite` en XML, puede usarse como sugerencia.
 - El estado visual cambia por nivel: normal, proximo, urgente, critico o expirado.
 
+## 8.4 Gestion de diagramas .puml
+- Cada expediente puede tener su propio diagrama asociado.
+- Se puede cargar fichero `.puml` desde el panel `Diagrama de flujo`.
+- El diagrama cargado se almacena en catalogo y puede aplicarse a otros expedientes.
+- Opcion para restaurar el diagrama predeterminado.
+
 ## 9. Persistencia y continuidad
 La extension conserva en almacenamiento local:
 - Paso actual.
@@ -182,3 +192,4 @@ Archivos principales:
 - `expediente-manager.js`: gestion de expedientes, estados y checkpoints.
 - `sidebar-patch.js`: integracion de panel multi-expediente y migracion de datos legacy.
 - `plazo-timer.js`: temporizadores de pasos de espera y cuenta atras.
+- `diagram-manager.js`: asociacion de diagramas por expediente, catalogo `.puml` y aplicacion dinamica del flujo.

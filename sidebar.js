@@ -328,6 +328,58 @@
             localStorage.setItem('flujo_licitacion_mejorado_v1', JSON.stringify(data));
         }
 
+        function replaceFlowDefinition(source, options = {}) {
+            if (typeof buildFlowDefinition !== 'function') return false;
+            const newDef = buildFlowDefinition(source);
+            if (!Array.isArray(newDef) || newDef.length === 0) return false;
+
+            const resetState = options.resetState !== false;
+            const validIds = new Set(newDef.map(s => s.id));
+
+            flowDefinition.length = 0;
+            newDef.forEach(s => flowDefinition.push(s));
+
+            if (autoAdvanceTimer) {
+                clearTimeout(autoAdvanceTimer);
+                autoAdvanceTimer = null;
+            }
+
+            if (resetState) {
+                currentStep = 0;
+                completedSteps.clear();
+                decisions = {};
+                stepNotes = {};
+                stepTimestamps = {};
+                stepStartTimes = {};
+            } else {
+                completedSteps = new Set(Array.from(completedSteps).filter(id => validIds.has(id)));
+                decisions = Object.fromEntries(
+                    Object.entries(decisions).filter(([id]) => validIds.has(Number(id)))
+                );
+                stepNotes = Object.fromEntries(
+                    Object.entries(stepNotes).filter(([id]) => validIds.has(Number(id)))
+                );
+                stepTimestamps = Object.fromEntries(
+                    Object.entries(stepTimestamps).filter(([id]) => validIds.has(Number(id)))
+                );
+                stepStartTimes = Object.fromEntries(
+                    Object.entries(stepStartTimes).filter(([id]) => validIds.has(Number(id)))
+                );
+                if (currentStep >= flowDefinition.length) currentStep = 0;
+            }
+
+            const currentDef = flowDefinition[currentStep];
+            if (currentDef && !stepStartTimes[currentDef.id]) {
+                stepStartTimes[currentDef.id] = Date.now();
+            }
+
+            saveData();
+            renderFlow();
+            requestAnimationFrame(() => focusCurrentStepCard(false));
+            autoAdvanceSystemSteps();
+            return true;
+        }
+
         function shouldShowStep(step) {
             if (!step || !step.condiciones || step.condiciones.length === 0) return true;
             for (const cond of step.condiciones) {
@@ -1685,6 +1737,15 @@
                 retrocederFlujo();
             }
         });
+
+        // API para módulos externos (diagram-manager) que necesiten
+        // reemplazar el diagrama y aplicar pasos reales en este cierre.
+        window.flowDefinition = flowDefinition;
+        window.SidebarFlowAPI = {
+            replaceFlowDefinition,
+            getFlowDefinition: () => flowDefinition.slice(),
+            buildFlowDefinition
+        };
 
         // Inicializar
         loadData();

@@ -1,0 +1,11 @@
+@startuml
+scale 1500 width
+skinparam swimlaneWidth 300
+
+|#8ce7e0ff|OA|
+start
+|OA|
+:paso1;
+|sistema|
+:paso2;
+@enduml
