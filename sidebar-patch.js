@@ -1,6 +1,6 @@
 // ============================================================
-// PATCH — gestión multi-expediente y puntos de control
-// sidebar-patch.js  — incluir DESPUÉS de sidebar.js
+// PATCH ?" gestión multi-expediente y puntos de control
+// sidebar-patch.js  ?" incluir DESPU?S de sidebar.js
 // ============================================================
 // Sobrescribe las funciones de persistencia de sidebar.js y
 // añade el panel de gestión de expedientes en el DOM.
@@ -9,21 +9,21 @@
 (function () {
     'use strict';
 
-    // ── IDs de almacenamiento legado (migración automática) ──
+    // "?"? IDs de almacenamiento legado (migración automática) "?"?
     const LEGACY_FLOW_KEY   = 'flujo_licitacion_mejorado_v1';
     const LEGACY_DATA_KEY   = 'expediente_data';
 
-    // ── Referencia al expediente activo en esta sesión ───────
+    // "?"? Referencia al expediente activo en esta sesión "?"?"?"?"?"?"?
     let _activeId = null;
 
-    // ─────────────────────────────────────────────────────────
-    // INICIALIZACIÓN: resolver expediente activo
-    // ─────────────────────────────────────────────────────────
+    // "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
+    // INICIALIZACI"N: resolver expediente activo
+    // "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
 
     function resolveActiveExpediente() {
         let id = ExpedienteManager.getActiveId();
 
-        // Migración automática de datos legacy → primer expediente
+        // Migración automática de datos legacy ?' primer expediente
         const legacyFlow = localStorage.getItem(LEGACY_FLOW_KEY);
         const legacyData = localStorage.getItem(LEGACY_DATA_KEY);
 
@@ -55,9 +55,9 @@
         _origRemoveItem.call(localStorage, LEGACY_DATA_KEY);
     }
 
-    // ─────────────────────────────────────────────────────────
+    // "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
     // SOBRESCRITURA DE FUNCIONES DE PERSISTENCIA DE sidebar.js
-    // ─────────────────────────────────────────────────────────
+    // "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
 
     // Inyectar en el scope global donde sidebar.js las declara
     // Las funciones originales están en el scope del IIFE de sidebar.js,
@@ -72,7 +72,7 @@
     // Estrategia: parchear después de que el script original se ejecute
     // sobreescribiendo las llamadas a localStorage que sidebar.js hace.
 
-    // ── Proxy localStorage ───────────────────────────────────
+    // "?"? Proxy localStorage "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
     // Intercepta getItem/setItem para redirigir las claves de sidebar.js
     // al expediente activo.
 
@@ -119,10 +119,10 @@
         _origRemoveItem.call(this, key);
     };
 
-    // ─────────────────────────────────────────────────────────
+    // "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
     // HELPERS DE ESTADO (acceden a variables de sidebar.js vía
     // la función de captura que añadimos al init)
-    // ─────────────────────────────────────────────────────────
+    // "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
 
     function captureCurrentFlowState() {
         // Lee el estado actual de sidebar.js accediendo al localStorage
@@ -131,9 +131,9 @@
         return raw || {};
     }
 
-    // ─────────────────────────────────────────────────────────
-    // PANEL DE GESTIÓN — insertar en el DOM
-    // ─────────────────────────────────────────────────────────
+    // "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
+    // PANEL DE GESTI"N ?" insertar en el DOM
+    // "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
 
     function buildPanel() {
         // Evitar duplicados
@@ -142,26 +142,81 @@
         const panel = document.createElement('div');
         panel.id = 'emPanel';
         panel.className = 'em-panel';
-        panel.innerHTML = `
-            <div class="em-header" id="emHeaderToggle">
-                <span>📁 Expedientes</span>
-                <div class="em-header-actions">
-                    <span class="em-active-label" id="emActiveLabel"></span>
-                    <button class="em-btn em-btn-sm em-btn-primary" id="emBtnNuevo" title="Nuevo expediente">＋ Nuevo</button>
-                    <span class="em-toggle-icon" id="emToggleIcon">▾</span>
-                </div>
-            </div>
-            <div class="em-body" id="emBody">
-                <div id="emList" class="em-list"></div>
-                <div class="em-section-title">📌 Puntos de control — <span id="emCpExpedienteNombre"></span></div>
-                <div class="em-cp-bar">
-                    <input type="text" id="emCpLabel" class="em-input" placeholder="Nombre del punto de control..." maxlength="60">
-                    <button class="em-btn em-btn-primary" id="emBtnGuardarCp">💾 Guardar</button>
-                </div>
-                <div id="emCpList" class="em-cp-list"></div>
-            </div>
-        `;
+        const header = document.createElement('div');
+        header.className = 'em-header';
+        header.id = 'emHeaderToggle';
 
+        const title = document.createElement('span');
+        title.textContent = 'Expedientes';
+
+        const headerActions = document.createElement('div');
+        headerActions.className = 'em-header-actions';
+
+        const activeLabel = document.createElement('span');
+        activeLabel.className = 'em-active-label';
+        activeLabel.id = 'emActiveLabel';
+
+        const btnNuevo = document.createElement('button');
+        btnNuevo.className = 'em-btn em-btn-sm em-btn-primary';
+        btnNuevo.id = 'emBtnNuevo';
+        btnNuevo.title = 'Nuevo expediente';
+        btnNuevo.textContent = '+ Nuevo';
+
+        const toggleIcon = document.createElement('span');
+        toggleIcon.className = 'em-toggle-icon';
+        toggleIcon.id = 'emToggleIcon';
+        toggleIcon.textContent = 'v';
+
+        headerActions.appendChild(activeLabel);
+        headerActions.appendChild(btnNuevo);
+        headerActions.appendChild(toggleIcon);
+        header.appendChild(title);
+        header.appendChild(headerActions);
+
+        const body = document.createElement('div');
+        body.className = 'em-body';
+        body.id = 'emBody';
+
+        const list = document.createElement('div');
+        list.id = 'emList';
+        list.className = 'em-list';
+
+        const sectionTitle = document.createElement('div');
+        sectionTitle.className = 'em-section-title';
+        sectionTitle.appendChild(document.createTextNode('Puntos de control - '));
+        const cpName = document.createElement('span');
+        cpName.id = 'emCpExpedienteNombre';
+        sectionTitle.appendChild(cpName);
+
+        const cpBar = document.createElement('div');
+        cpBar.className = 'em-cp-bar';
+
+        const cpInput = document.createElement('input');
+        cpInput.type = 'text';
+        cpInput.id = 'emCpLabel';
+        cpInput.className = 'em-input';
+        cpInput.placeholder = 'Nombre del punto de control...';
+        cpInput.maxLength = 60;
+
+        const btnGuardarCp = document.createElement('button');
+        btnGuardarCp.className = 'em-btn em-btn-primary';
+        btnGuardarCp.id = 'emBtnGuardarCp';
+        btnGuardarCp.textContent = 'Guardar';
+
+        cpBar.appendChild(cpInput);
+        cpBar.appendChild(btnGuardarCp);
+
+        const cpList = document.createElement('div');
+        cpList.id = 'emCpList';
+        cpList.className = 'em-cp-list';
+
+        body.appendChild(list);
+        body.appendChild(sectionTitle);
+        body.appendChild(cpBar);
+        body.appendChild(cpList);
+
+        panel.appendChild(header);
+        panel.appendChild(body);
         // Insertar antes del flowchart
         const content = document.querySelector('.content') || document.body;
         content.insertAdjacentElement('afterbegin', panel);
@@ -189,7 +244,7 @@
         const body = document.getElementById('emBody');
         const icon = document.getElementById('emToggleIcon');
         if (body) body.style.display = _panelOpen ? 'block' : 'none';
-        if (icon) icon.textContent = _panelOpen ? '▴' : '▾';
+        if (icon) icon.textContent = _panelOpen ? '^' : 'v';
     }
 
     function refreshPanel() {
@@ -209,15 +264,18 @@
         if (cpNombre) cpNombre.textContent = active ? active.nombre : '';
     }
 
-    // ── Lista de expedientes ─────────────────────────────────
+    // "?"? Lista de expedientes "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
 
     function renderExpedienteList() {
         const container = document.getElementById('emList');
         if (!container) return;
-        container.innerHTML = '';
+        container.replaceChildren();
         const list = ExpedienteManager.getList();
         if (list.length === 0) {
-            container.innerHTML = '<div class="em-empty">Sin expedientes guardados</div>';
+            const empty = document.createElement('div');
+            empty.className = 'em-empty';
+            empty.textContent = 'Sin expedientes guardados';
+            container.appendChild(empty);
             return;
         }
         list.forEach(exp => {
@@ -318,15 +376,18 @@
         });
     }
 
-    // ── Puntos de control ────────────────────────────────────
+    // "?"? Puntos de control "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
 
     function renderCheckpointList() {
         const container = document.getElementById('emCpList');
         if (!container) return;
-        container.innerHTML = '';
+        container.replaceChildren();
         const checks = ExpedienteManager.getCheckpoints(_activeId);
         if (checks.length === 0) {
-            container.innerHTML = '<div class="em-empty">Sin puntos de control guardados</div>';
+            const empty = document.createElement('div');
+            empty.className = 'em-empty';
+            empty.textContent = 'Sin puntos de control guardados';
+            container.appendChild(empty);
             return;
         }
         checks.forEach(cp => {
@@ -372,7 +433,7 @@
             container.appendChild(item);
         });
     }
-    // ── Acciones ─────────────────────────────────────────────
+    // "?"? Acciones "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
 
     function crearNuevoExpediente() {
         const nombre = prompt('Nombre del nuevo expediente:');
@@ -398,9 +459,12 @@
         if (id === _activeId) return;
         _activeId = id;
         ExpedienteManager.setActiveId(id);
+        try {
+            window.dispatchEvent(new CustomEvent('em:active-expediente-changed', { detail: { id } }));
+        } catch (_) {}
         recargarEstadoActivo();
         refreshPanel();
-        showEmToast(`📁 Expediente cargado`);
+        showEmToast('Expediente cargado');
     }
 
     function recargarEstadoActivo() {
@@ -422,7 +486,7 @@
         const cp = ExpedienteManager.saveCheckpoint(_activeId, finalLabel, flowState, xmlData);
         if (labelInput) labelInput.value = '';
         renderCheckpointList();
-        showEmToast(`📌 Punto guardado: ${cp.label}`);
+        showEmToast(`Punto guardado: ${cp.label}`);
     }
 
     function restaurarPuntoControl(cpId) {
@@ -441,10 +505,10 @@
 
         recargarEstadoActivo();
         refreshPanel();
-        showEmToast(`↩ Restaurado: ${cp.label}`);
+        showEmToast(`Restaurado: ${cp.label}`);
     }
 
-    // ── Toast propio para no pisar el de sidebar.js ──────────
+    // "?"? Toast propio para no pisar el de sidebar.js "?"?"?"?"?"?"?"?"?"?
 
     function showEmToast(msg) {
         let t = document.getElementById('emToast');
@@ -459,16 +523,16 @@
         setTimeout(() => t.classList.remove('em-toast-show'), 3000);
     }
 
-    // ─────────────────────────────────────────────────────────
+    // "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
     // ESTILOS INLINE (se inyectan dinámicamente)
-    // ─────────────────────────────────────────────────────────
+    // "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
 
     function injectStyles() {
         if (document.getElementById('emStyles')) return;
         const style = document.createElement('style');
         style.id = 'emStyles';
         style.textContent = `
-        /* ── Panel contenedor ── */
+        /* "?"? Panel contenedor "?"? */
         .em-panel {
             background: #ffffff;
             border-radius: 12px;
@@ -479,7 +543,7 @@
             font-size: 14px;
         }
 
-        /* ── Cabecera ── */
+        /* "?"? Cabecera "?"? */
         .em-header {
             display: flex;
             align-items: center;
@@ -510,13 +574,13 @@
             line-height: 1;
         }
 
-        /* ── Cuerpo ── */
+        /* "?"? Cuerpo "?"? */
         .em-body {
             display: none;
             padding: 12px;
         }
 
-        /* ── Lista de expedientes ── */
+        /* "?"? Lista de expedientes "?"? */
         .em-list {
             display: flex;
             flex-direction: column;
@@ -613,7 +677,7 @@
             border-left: 1px solid #e5e7eb;
         }
 
-        /* ── Sección puntos de control ── */
+        /* "?"? Sección puntos de control "?"? */
         .em-section-title {
             font-size: 12px;
             font-weight: 700;
@@ -671,7 +735,7 @@
             flex-shrink: 0;
         }
 
-        /* ── Botones ── */
+        /* "?"? Botones "?"? */
         .em-btn {
             border: none;
             border-radius: 6px;
@@ -692,7 +756,7 @@
         .em-btn-restore { background: #d1fae5 !important; color: #065f46 !important; }
         .em-btn-restore:hover:not(:disabled) { background: #a7f3d0 !important; }
 
-        /* ── Empty state ── */
+        /* "?"? Empty state "?"? */
         .em-empty {
             text-align: center;
             color: #9ca3af;
@@ -700,7 +764,7 @@
             padding: 10px 0;
         }
 
-        /* ── Toast ── */
+        /* "?"? Toast "?"? */
         .em-toast {
             position: fixed;
             bottom: 70px;
@@ -726,9 +790,9 @@
         document.head.appendChild(style);
     }
 
-    // ─────────────────────────────────────────────────────────
+    // "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
     // ARRANQUE
-    // ─────────────────────────────────────────────────────────
+    // "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
 
     function init() {
         injectStyles();
@@ -748,4 +812,6 @@
     init();
 
 })();
+
+
 

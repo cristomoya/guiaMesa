@@ -3,7 +3,7 @@
 
 ### Portada del documento
 - Codigo de documento: `MAN-EXT-FF-001`
-- Version: `1.3.0`
+- Version: `1.3.1`
 - Estado: `Vigente`
 - Fecha de emision: `17/02/2026`
 - Fecha de ultima revision: `18/02/2026`
@@ -18,6 +18,7 @@
 ### Control de cambios
 | Version | Fecha       | Autor            | Descripcion del cambio |
 |---------|-------------|------------------|------------------------|
+| 1.3.1   | 18/02/2026  | Equipo funcional | Correccion de validacion AMO eliminando asignaciones `innerHTML`; paneles y listas renderizados con API DOM segura |
 | 1.3.0   | 18/02/2026  | Equipo funcional | Se incorpora gestion de diagramas .puml por expediente, optimizacion de carga y aplicacion dinamica del flujo |
 | 1.2.0   | 18/02/2026  | Equipo funcional | Se incorpora gestion multi-expediente, puntos de control y temporizadores configurables de plazos |
 | 1.1.0   | 18/02/2026  | Equipo funcional | Actualizacion del manual con timeline detallada, autocompletado de pasos del sistema y detalle ampliado de expediente XML |

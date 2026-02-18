@@ -440,7 +440,7 @@
 
         function renderFlow() {
             const flowchart = document.getElementById('flowchart');
-            flowchart.innerHTML = '';
+            flowchart.replaceChildren();
             const compactSidebar = flowchart.clientWidth <= 900;
 
             const flowContainer = document.createElement('div');
@@ -1205,8 +1205,8 @@
             infoContainer.classList.add('active');
 
             // Limpiar contenido previo
-            gridContainer.innerHTML = '';
-            highlightsContainer.innerHTML = '';
+            gridContainer.replaceChildren();
+            highlightsContainer.replaceChildren();
 
             // Campos principales
             const mainFields = [
@@ -1307,9 +1307,9 @@
             const infoContainer = document.getElementById('expedienteInfo');
             if (infoContainer) infoContainer.classList.remove('active');
             const gridContainer = document.getElementById('expedienteGrid');
-            if (gridContainer) gridContainer.innerHTML = '';
+            if (gridContainer) gridContainer.replaceChildren();
             const highlightsContainer = document.getElementById('expedienteHighlights');
-            if (highlightsContainer) highlightsContainer.innerHTML = '';
+            if (highlightsContainer) highlightsContainer.replaceChildren();
             const fileInput = document.getElementById('xmlFileInput');
             if (fileInput) fileInput.value = '';
         }
@@ -1553,7 +1553,7 @@
 
         function updateTimelineStats() {
             const statsContainer = document.getElementById('timelineStats');
-            statsContainer.innerHTML = '';
+            statsContainer.replaceChildren();
 
             const totalDuration = calculateTotalDuration();
             const currentDuration = calculateCurrentStepDuration();
@@ -1613,7 +1613,7 @@
 
         function updateTimelineList() {
             const listContainer = document.getElementById('timelineList');
-            listContainer.innerHTML = '';
+            listContainer.replaceChildren();
 
             let lastPhaseIndex = -1;
 
@@ -1765,3 +1765,4 @@
         setTimeout(() => {
             autoAdvanceSystemSteps();
         }, 500);
+

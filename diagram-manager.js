@@ -208,34 +208,89 @@
         const panel = document.createElement('div');
         panel.id = 'dmPanel';
         panel.className = 'dm-panel';
-        panel.innerHTML = `
-            <div class="dm-header" id="dmHeaderToggle">
-                <span>🗂️ Diagrama de flujo</span>
-                <div class="dm-header-right">
-                    <span class="dm-active-name" id="dmActiveName"></span>
-                    <span class="dm-toggle-icon" id="dmToggleIcon">▾</span>
-                </div>
-            </div>
-            <div class="dm-body" id="dmBody" style="display:none">
-                <div class="dm-current" id="dmCurrentCard"></div>
-                <div class="dm-section-title">📚 Diagramas disponibles</div>
-                <div id="dmCatalog" class="dm-catalog"></div>
-                <div class="dm-section-title">📂 Cargar fichero .puml</div>
-                <div class="dm-upload-area">
-                    <input type="file" id="dmFileInput" accept=".puml,.txt" style="display:none">
-                    <label for="dmFileInput" class="dm-btn dm-btn-primary">📂 Seleccionar fichero .puml</label>
-                    <span class="dm-hint">
-                        Cabecera opcional en el fichero:<br>
-                        <code>// nombre: Mi proceso</code><br>
-                        <code>// descripcion: Breve descripción</code><br>
-                        <code>// icono: 🔧</code>
-                    </span>
-                </div>
-                <div style="margin-top:10px">
-                    <button class="dm-btn dm-btn-secondary" id="dmBtnReset">↩ Usar diagrama predeterminado</button>
-                </div>
-            </div>
-        `;
+        const header = document.createElement('div');
+        header.className = 'dm-header';
+        header.id = 'dmHeaderToggle';
+        const title = document.createElement('span');
+        title.textContent = 'Diagrama de flujo';
+        const headerRight = document.createElement('div');
+        headerRight.className = 'dm-header-right';
+        const activeName = document.createElement('span');
+        activeName.className = 'dm-active-name';
+        activeName.id = 'dmActiveName';
+        const toggleIcon = document.createElement('span');
+        toggleIcon.className = 'dm-toggle-icon';
+        toggleIcon.id = 'dmToggleIcon';
+        toggleIcon.textContent = '▾';
+        headerRight.appendChild(activeName);
+        headerRight.appendChild(toggleIcon);
+        header.appendChild(title);
+        header.appendChild(headerRight);
+
+        const body = document.createElement('div');
+        body.className = 'dm-body';
+        body.id = 'dmBody';
+        body.style.display = 'none';
+        const currentCard = document.createElement('div');
+        currentCard.className = 'dm-current';
+        currentCard.id = 'dmCurrentCard';
+        body.appendChild(currentCard);
+
+        const sectionCatalog = document.createElement('div');
+        sectionCatalog.className = 'dm-section-title';
+        sectionCatalog.textContent = 'Diagramas disponibles';
+        body.appendChild(sectionCatalog);
+        const catalog = document.createElement('div');
+        catalog.id = 'dmCatalog';
+        catalog.className = 'dm-catalog';
+        body.appendChild(catalog);
+
+        const sectionLoad = document.createElement('div');
+        sectionLoad.className = 'dm-section-title';
+        sectionLoad.textContent = 'Cargar fichero .puml';
+        body.appendChild(sectionLoad);
+        const uploadArea = document.createElement('div');
+        uploadArea.className = 'dm-upload-area';
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.id = 'dmFileInput';
+        fileInput.accept = '.puml,.txt';
+        fileInput.style.display = 'none';
+        const fileLabel = document.createElement('label');
+        fileLabel.htmlFor = 'dmFileInput';
+        fileLabel.className = 'dm-btn dm-btn-primary';
+        fileLabel.textContent = 'Seleccionar fichero .puml';
+        const hint = document.createElement('span');
+        hint.className = 'dm-hint';
+        hint.appendChild(document.createTextNode('Cabecera opcional en el fichero:'));
+        hint.appendChild(document.createElement('br'));
+        const h1 = document.createElement('code');
+        h1.textContent = '// nombre: Mi proceso';
+        hint.appendChild(h1);
+        hint.appendChild(document.createElement('br'));
+        const h2 = document.createElement('code');
+        h2.textContent = '// descripcion: Breve descripcion';
+        hint.appendChild(h2);
+        hint.appendChild(document.createElement('br'));
+        const h3 = document.createElement('code');
+        h3.textContent = '// icono: *';
+        hint.appendChild(h3);
+        uploadArea.appendChild(fileInput);
+        uploadArea.appendChild(fileLabel);
+        uploadArea.appendChild(hint);
+        body.appendChild(uploadArea);
+
+        const resetWrap = document.createElement('div');
+        resetWrap.style.marginTop = '10px';
+        const resetBtn = document.createElement('button');
+        resetBtn.className = 'dm-btn dm-btn-secondary';
+        resetBtn.id = 'dmBtnReset';
+        resetBtn.textContent = 'Usar diagrama predeterminado';
+        resetWrap.appendChild(resetBtn);
+        body.appendChild(resetWrap);
+
+        panel.appendChild(header);
+        panel.appendChild(body);
 
         insertPanel(panel);
 
@@ -243,7 +298,6 @@
 
         // Toggle abre/cierra — el click en el header completo,
         // excepto cuando se pulsa un botón/label interno
-        const header = panel.querySelector('#dmHeaderToggle');
         header.addEventListener('click', (e) => {
             if (e.target.closest('button, label, input, a')) return;
             const body = document.getElementById('dmBody');
@@ -254,10 +308,10 @@
         });
 
         // Cargar fichero .puml
-        panel.querySelector('#dmFileInput').addEventListener('change', handleFileLoad);
+        fileInput.addEventListener('change', handleFileLoad);
 
         // Botón reset
-        panel.querySelector('#dmBtnReset').addEventListener('click', () => {
+        resetBtn.addEventListener('click', () => {
             if (!confirm('¿Restaurar el diagrama predeterminado?\nEl progreso actual se conserva.')) return;
             const expId = getActiveExpId();
             clearActiveDiagram(expId);
@@ -287,6 +341,7 @@
     function renderCurrentCard() {
         const card = document.getElementById('dmCurrentCard');
         if (!card) return;
+        card.replaceChildren();
 
         const saved   = getActiveDiagram(getActiveExpId());
         const meta    = saved ? saved.meta : BUILT_IN_META;
@@ -296,28 +351,50 @@
             ? new Date(meta.fechaCarga).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })
             : 'Incluido con la extensión';
 
-        card.innerHTML = `
-            <div class="dm-cur-row">
-                <span class="dm-cur-icon">${meta.icono}</span>
-                <div class="dm-cur-info">
-                    <div class="dm-cur-name">${meta.nombre}</div>
-                    ${meta.descripcion ? `<div class="dm-cur-desc">${meta.descripcion}</div>` : ''}
-                    <div class="dm-cur-meta">
-                        ${!builtin ? `<span>📁 ${meta.fuente}</span>` : ''}
-                        <span>🧩 ${steps} pasos</span>
-                        <span>📅 ${fecha}</span>
-                    </div>
-                </div>
-                <span class="dm-cur-badge ${builtin ? 'dm-badge-builtin' : 'dm-badge-custom'}">
-                    ${builtin ? 'Predeterminado' : 'Personalizado'}
-                </span>
-            </div>`;
+        const row = document.createElement('div');
+        row.className = 'dm-cur-row';
+        const icon = document.createElement('span');
+        icon.className = 'dm-cur-icon';
+        icon.textContent = meta.icono || '*';
+        const info = document.createElement('div');
+        info.className = 'dm-cur-info';
+        const name = document.createElement('div');
+        name.className = 'dm-cur-name';
+        name.textContent = meta.nombre || '';
+        info.appendChild(name);
+        if (meta.descripcion) {
+            const desc = document.createElement('div');
+            desc.className = 'dm-cur-desc';
+            desc.textContent = meta.descripcion;
+            info.appendChild(desc);
+        }
+        const metaRow = document.createElement('div');
+        metaRow.className = 'dm-cur-meta';
+        if (!builtin && meta.fuente) {
+            const fileSpan = document.createElement('span');
+            fileSpan.textContent = meta.fuente;
+            metaRow.appendChild(fileSpan);
+        }
+        const stepsSpan = document.createElement('span');
+        stepsSpan.textContent = `${steps} pasos`;
+        metaRow.appendChild(stepsSpan);
+        const dateSpan = document.createElement('span');
+        dateSpan.textContent = fecha;
+        metaRow.appendChild(dateSpan);
+        info.appendChild(metaRow);
+        const badge = document.createElement('span');
+        badge.className = `dm-cur-badge ${builtin ? 'dm-badge-builtin' : 'dm-badge-custom'}`;
+        badge.textContent = builtin ? 'Predeterminado' : 'Personalizado';
+        row.appendChild(icon);
+        row.appendChild(info);
+        row.appendChild(badge);
+        card.appendChild(row);
     }
 
     function renderCatalog() {
         const container = document.getElementById('dmCatalog');
         if (!container) return;
-        container.innerHTML = '';
+        container.replaceChildren();
 
         const expId    = getActiveExpId();
         const saved    = getActiveDiagram(expId);
@@ -331,23 +408,59 @@
 
             const item = document.createElement('div');
             item.className = 'dm-cat-item' + (isActive ? ' dm-cat-active' : '');
-            item.innerHTML = `
-                <div class="dm-cat-main">
-                    <span class="dm-cat-icon">${entry.icono}</span>
-                    <div class="dm-cat-info">
-                        <div class="dm-cat-name">${entry.nombre}</div>
-                        ${entry.descripcion ? `<div class="dm-cat-desc">${entry.descripcion}</div>` : ''}
-                        ${entry.fuente && !isBuiltin ? `<div class="dm-cat-file">📁 ${entry.fuente}</div>` : ''}
-                    </div>
-                    ${isActive ? '<span class="dm-cat-check">✓ Activo</span>' : ''}
-                </div>
-                <div class="dm-cat-actions">
-                    ${!isActive ? `<button class="dm-btn dm-btn-xs dm-btn-apply" data-id="${entry.id}">Usar</button>` : ''}
-                    ${!isBuiltin ? `<button class="dm-btn dm-btn-xs dm-btn-danger" data-del="${entry.id}">🗑</button>` : ''}
-                </div>`;
+            const main = document.createElement('div');
+            main.className = 'dm-cat-main';
+            const icon = document.createElement('span');
+            icon.className = 'dm-cat-icon';
+            icon.textContent = entry.icono || '*';
+            const info = document.createElement('div');
+            info.className = 'dm-cat-info';
+            const name = document.createElement('div');
+            name.className = 'dm-cat-name';
+            name.textContent = entry.nombre || '';
+            info.appendChild(name);
+            if (entry.descripcion) {
+                const desc = document.createElement('div');
+                desc.className = 'dm-cat-desc';
+                desc.textContent = entry.descripcion;
+                info.appendChild(desc);
+            }
+            if (entry.fuente && !isBuiltin) {
+                const file = document.createElement('div');
+                file.className = 'dm-cat-file';
+                file.textContent = entry.fuente;
+                info.appendChild(file);
+            }
+            main.appendChild(icon);
+            main.appendChild(info);
+            if (isActive) {
+                const active = document.createElement('span');
+                active.className = 'dm-cat-check';
+                active.textContent = 'Activo';
+                main.appendChild(active);
+            }
+            const actions = document.createElement('div');
+            actions.className = 'dm-cat-actions';
+            let btnApply = null;
+            let btnDel = null;
+            if (!isActive) {
+                btnApply = document.createElement('button');
+                btnApply.className = 'dm-btn dm-btn-xs dm-btn-apply';
+                btnApply.dataset.id = entry.id;
+                btnApply.textContent = 'Usar';
+                actions.appendChild(btnApply);
+            }
+            if (!isBuiltin) {
+                btnDel = document.createElement('button');
+                btnDel.className = 'dm-btn dm-btn-xs dm-btn-danger';
+                btnDel.dataset.del = entry.id;
+                btnDel.textContent = 'Eliminar';
+                actions.appendChild(btnDel);
+            }
+            item.appendChild(main);
+            item.appendChild(actions);
 
             // Usar
-            const btnApply = item.querySelector('.dm-btn-apply');
             if (btnApply) {
                 btnApply.addEventListener('click', () => {
                     if (isBuiltin) {
@@ -366,7 +479,6 @@
             }
 
             // Eliminar del catálogo
-            const btnDel = item.querySelector('[data-del]');
             if (btnDel) {
                 btnDel.addEventListener('click', (e) => {
                     e.stopPropagation();
