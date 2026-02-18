@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Ayuda mesa de contratación",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Diagrama interactivo de seguimiento de licitación como extensión de barra lateral para Firefox.",
   "browser_specific_settings": {
     "gecko": {
