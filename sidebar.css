@@ -1,4 +1,4 @@
-﻿* {
+* {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -83,6 +83,32 @@ body {
             gap: 8px;
             flex-wrap: wrap;
             align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+
+        .jump-controls {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 8px;
+        }
+
+        .jump-controls label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .jump-step-select {
+            min-width: 260px;
+            max-width: 420px;
+            padding: 7px 10px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            background: #fff;
+            font-size: 13px;
         }
 
         .btn {

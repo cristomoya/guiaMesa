@@ -1,4 +1,76 @@
-﻿const PLANTUML_SOURCE = document.getElementById('plantumlSource').textContent;
+﻿const plantumlSourceEl = document.getElementById('plantumlSource');
+
+function getExternalPlantUmlCandidates() {
+    if (!plantumlSourceEl) return [];
+    const raw = String(plantumlSourceEl.getAttribute('data-src') || plantumlSourceEl.getAttribute('src') || '').trim();
+    if (!raw) return [];
+
+    const list = [raw];
+    if (raw.includes('Contratacion')) list.push(raw.replace(/Contratacion/g, 'Contratación'));
+    if (raw.includes('Contratación')) list.push(raw.replace(/Contratación/g, 'Contratacion'));
+    return Array.from(new Set(list));
+}
+
+function loadTextViaHiddenIframe(path) {
+    return new Promise((resolve) => {
+        let done = false;
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+
+        const finish = (text) => {
+            if (done) return;
+            done = true;
+            try { iframe.remove(); } catch (_e) {}
+            resolve(String(text || '').trim());
+        };
+
+        iframe.onload = () => {
+            try {
+                const doc = iframe.contentDocument;
+                if (!doc || !doc.body) return finish('');
+                const text = doc.body.innerText || doc.body.textContent || '';
+                finish(text);
+            } catch (_e) {
+                finish('');
+            }
+        };
+
+        iframe.onerror = () => finish('');
+        document.body.appendChild(iframe);
+        iframe.src = path;
+        setTimeout(() => finish(''), 3000);
+    });
+}
+
+async function loadExternalPlantUmlSource() {
+    if (!plantumlSourceEl) return;
+    const candidates = getExternalPlantUmlCandidates();
+    if (candidates.length === 0) return;
+
+    for (const candidate of candidates) {
+        try {
+            const resp = await fetch(candidate, { cache: 'no-store' });
+            if (!resp.ok) continue;
+            const text = String(await resp.text() || '').trim();
+            if (!text || !text.includes('@startuml')) continue;
+
+            plantumlSourceEl.textContent = text;
+            replaceFlowDefinition(text, { resetState: false });
+            return;
+        } catch (_e) {
+            // En file:// fetch puede fallar por CORS; intentar lectura por iframe.
+            const text = await loadTextViaHiddenIframe(candidate);
+            if (!text || !text.includes('@startuml')) continue;
+            plantumlSourceEl.textContent = text;
+            replaceFlowDefinition(text, { resetState: false });
+            return;
+        }
+    }
+
+    showToast('⚠️ No se pudo cargar el archivo .puml indicado en data-src');
+}
+
+const PLANTUML_SOURCE = plantumlSourceEl ? String(plantumlSourceEl.textContent || '').trim() : '';
         const PLACSP_DOC_URL = encodeURI('guia.html');
         const PLACSP_ASSETS_DIR = 'images';
         const SHOW_PHASE_VISUALS = false;
@@ -88,7 +160,7 @@
         function parseStepPayload(rawText) {
             const full = String(rawText || '').trim();
             const imageMatch = full.match(/\bimg:(\S+)/i);
-            const bookmarkMatch = full.match(/\b(?:bm|bookmark):([#A-Za-z0-9_-]+)/i);
+            const bookmarkMatch = full.match(/\b(?:bm|bookmark):(\S+)/i);
             let imageUrl = imageMatch ? imageMatch[1] : null;
             let bookmark = bookmarkMatch ? bookmarkMatch[1] : null;
             if (imageUrl && !/^https?:\/\//i.test(imageUrl) && !imageUrl.startsWith('/')) {
@@ -100,7 +172,7 @@
             const text = normalizeStepText(
                 full
                     .replace(/\bimg:\S+/ig, '')
-                    .replace(/\b(?:bm|bookmark):[#A-Za-z0-9_-]+/ig, '')
+                    .replace(/\b(?:bm|bookmark):\S+/ig, '')
                     .trim()
             );
             return { text, imageUrl, bookmark };
@@ -126,14 +198,25 @@
         }
 
         function openPlacspBookmark(bookmark) {
-            const url = bookmark ? `${PLACSP_DOC_URL}#${bookmark}` : PLACSP_DOC_URL;
+            const raw = String(bookmark || '').trim();
+            let url = PLACSP_DOC_URL;
+            if (raw) {
+                if (/^https?:\/\//i.test(raw)) {
+                    url = raw;
+                } else {
+                    const anchor = raw.startsWith('#') ? raw.slice(1) : raw;
+                    url = `${PLACSP_DOC_URL}#${anchor}`;
+                }
+            }
             window.open(url, '_blank', 'noopener,noreferrer');
         }
 
         function getActorColor(actor) {
             const colors = {
                 'OA': '#667eea',
+                'Órgano de Asistencia (OA)': '#E8F6E8',
                 'Sistema': '#28a745',
+                'Órgano de Contratación (OC)': '#E8F4FD',
                 'Licitador': '#fbbf24'
             };
             return colors[actor] || '#6c757d';
@@ -145,7 +228,7 @@
             let currentActor = 'OA';
             const branchStack = [];
             const loopStack = [];
-            const tokenRegex = /\|([^|\r\n]+)\||#([0-9A-Fa-f]{6,8})\s*:\s*([\s\S]*?);|:\s*([\s\S]*?);|if\s*\(([\s\S]*?)\)\s*(?:then|is)|\belse\b(?:\s*\(([\s\S]*?)\))?|\bendif\b|repeat\b|repeat while\s*\(([\s\S]*?)\)/gi;
+            const tokenRegex = /(?:^|[\r\n])\s*\|([^|\r\n]+)\||(?:^|[\r\n])\s*#([0-9A-Fa-f]{6,8})\s*:\s*([\s\S]*?);|(?:^|[\r\n])\s*:+\s*([\s\S]*?);|(?:^|[\r\n])\s*if\s*\(([\s\S]*?)\)\s*(?:then|is)|(?:^|[\r\n])\s*\belse\b(?:\s*\(([\s\S]*?)\))?|(?:^|[\r\n])\s*\bendif\b|(?:^|[\r\n])\s*repeat\b|(?:^|[\r\n])\s*repeat while\s*\(([\s\S]*?)\)/gi;
             let match;
 
             function getActiveConditions() {
@@ -389,6 +472,84 @@
             return true;
         }
 
+        function populateJumpStepSelector() {
+            const select = document.getElementById('jumpStepSelect');
+            if (!select) return;
+
+            const previous = String(select.value || '');
+            select.replaceChildren();
+
+            const frag = document.createDocumentFragment();
+            flowDefinition.forEach((step, index) => {
+                if (!shouldShowStep(step)) return;
+
+                const option = document.createElement('option');
+                option.value = String(index);
+                const rawText = String(step.texto || '').replace(/\s+/g, ' ').trim();
+                const shortText = rawText.length > 90 ? rawText.slice(0, 87) + '...' : rawText;
+                option.textContent = `${index + 1}. ${shortText}`;
+                if (index === currentStep) option.textContent += ' (activo)';
+                frag.appendChild(option);
+            });
+
+            select.appendChild(frag);
+            if (previous && select.querySelector(`option[value="${previous}"]`)) {
+                select.value = previous;
+            } else {
+                select.value = String(currentStep);
+            }
+        }
+
+        function jumpToStepIndex(targetIndex) {
+            if (!Number.isInteger(targetIndex) || targetIndex < 0 || targetIndex >= flowDefinition.length) {
+                showToast('⚠️ Paso no válido');
+                return;
+            }
+
+            const targetStep = flowDefinition[targetIndex];
+            if (!shouldShowStep(targetStep)) {
+                showToast('⚠️ El paso seleccionado no está disponible con las decisiones actuales');
+                return;
+            }
+
+            if (autoAdvanceTimer) {
+                clearTimeout(autoAdvanceTimer);
+                autoAdvanceTimer = null;
+            }
+
+            const now = Date.now();
+            flowDefinition.forEach((step, index) => {
+                if (!shouldShowStep(step)) return;
+
+                if (index < targetIndex) {
+                    completedSteps.add(step.id);
+                    if (!stepTimestamps[step.id]) stepTimestamps[step.id] = now;
+                    if (!stepStartTimes[step.id]) stepStartTimes[step.id] = now;
+                } else {
+                    completedSteps.delete(step.id);
+                    delete stepTimestamps[step.id];
+                    if (index > targetIndex) delete stepStartTimes[step.id];
+                    if (step.tipo === 'decision' || step.tipo === 'loop') delete decisions[step.id];
+                }
+            });
+
+            currentStep = targetIndex;
+            if (!stepStartTimes[targetStep.id]) stepStartTimes[targetStep.id] = now;
+
+            saveData();
+            renderFlow();
+            requestAnimationFrame(() => focusCurrentStepCard(true));
+            autoAdvanceSystemSteps();
+            showToast('✅ Paso activo actualizado');
+        }
+
+        function jumpToSelectedStep() {
+            const select = document.getElementById('jumpStepSelect');
+            if (!select) return;
+            const targetIndex = Number.parseInt(select.value, 10);
+            jumpToStepIndex(targetIndex);
+        }
+
         function getCurrentPhase() {
             for (let i = PROCESS_PHASES.length - 1; i >= 0; i--) {
                 if (currentStep >= PROCESS_PHASES[i].startStep) {
@@ -457,6 +618,7 @@
                 empty.textContent = 'No hay actividades visibles con las decisiones actuales';
                 flowContainer.appendChild(empty);
                 flowchart.appendChild(flowContainer);
+                populateJumpStepSelector();
                 updateStats();
                 updatePhaseProgress();
                 return;
@@ -532,6 +694,7 @@
             });
 
             flowchart.appendChild(flowContainer);
+            populateJumpStepSelector();
             updateStats();
             updatePhaseProgress();
             // Actualizar timeline si está visible
@@ -640,7 +803,10 @@
                 img.alt = 'Referencia visual del paso';
                 img.loading = 'lazy';
                 img.style.cursor = 'pointer';
-                img.title = bookmark ? 'Abrir referencia en PLACSP' : 'Abrir guía en PLACSP';
+                const isExternalBookmark = bookmark && /^https?:\/\//i.test(String(bookmark));
+                img.title = bookmark
+                    ? (isExternalBookmark ? 'Abrir enlace web' : 'Abrir referencia en PLACSP')
+                    : 'Abrir guía en PLACSP';
                 img.onclick = () => openPlacspBookmark(bookmark);
                 media.appendChild(img);
                 node.appendChild(media);
@@ -676,7 +842,7 @@
                 if (bookmark) {
                     const docBtn = document.createElement('button');
                     docBtn.className = 'btn-doc-link';
-                    docBtn.textContent = '🔗 Ver en PLACSP';
+                    docBtn.textContent = /^https?:\/\//i.test(String(bookmark)) ? '🔗 Ver enlace' : '🔗 Ver en PLACSP';
                     docBtn.onclick = () => openPlacspBookmark(bookmark);
                     actions.appendChild(docBtn);
                 }
@@ -1190,7 +1356,7 @@
                 return;
             }
 
-            let context = `\n\n📄 DATOS DEL EXPEDIENTE:\n`;
+            let context = `  📄 DATOS DEL EXPEDIENTE: `;
 
             const infoContainer = document.getElementById('expedienteInfo');
             const gridContainer = document.getElementById('expedienteGrid');
@@ -1340,12 +1506,12 @@
         function getExpedienteContext() {
             if (!expedienteData) return '';
             
-            let context = `\n\n📄 DATOS DEL EXPEDIENTE:\n`;
-            context += `Expediente: ${expedienteData.expediente}\n`;
-            context += `Objeto: ${expedienteData.nombreProyecto}\n`;
-            context += `Procedimiento: ${expedienteData.procedimiento}\n`;
-            context += `Tipo: ${expedienteData.tipoContrato}\n`;
-            context += `Presupuesto: ${formatCurrency(expedienteData.presupuestoBase)}\n`;
+            let context = `  📄 DATOS DEL EXPEDIENTE: `;
+            context += `Expediente: ${expedienteData.expediente} `;
+            context += `Objeto: ${expedienteData.nombreProyecto} `;
+            context += `Procedimiento: ${expedienteData.procedimiento} `;
+            context += `Tipo: ${expedienteData.tipoContrato} `;
+            context += `Presupuesto: ${formatCurrency(expedienteData.presupuestoBase)} `;
             
             return context;
         }
@@ -1722,6 +1888,10 @@
         document.getElementById('btnRetroceder').addEventListener('click', retrocederFlujo);
         document.getElementById('btnContinuar').addEventListener('click', continuarFlujo);
         document.getElementById('btnReiniciar').addEventListener('click', reiniciarFlujo);
+        const btnIrAPaso = document.getElementById('btnIrAPaso');
+        if (btnIrAPaso) btnIrAPaso.addEventListener('click', jumpToSelectedStep);
+        const jumpStepSelect = document.getElementById('jumpStepSelect');
+        if (jumpStepSelect) jumpStepSelect.addEventListener('change', jumpToSelectedStep);
         document.getElementById('btnClearExpediente').addEventListener('click', clearExpediente);
         document.getElementById('btnToggleTimeline').addEventListener('click', toggleTimeline);
         document.getElementById('btnCerrarModal').addEventListener('click', cerrarModal);
@@ -1760,9 +1930,15 @@
         
         renderFlow();
         requestAnimationFrame(() => focusCurrentStepCard(false));
+
+        // Cargar diagrama externo (si data-src está definido) y aplicarlo en caliente.
+        setTimeout(() => {
+            loadExternalPlantUmlSource();
+        }, 0);
         
         // Auto-avanzar pasos del Sistema si estamos en uno al cargar
         setTimeout(() => {
             autoAdvanceSystemSteps();
         }, 500);
+
 

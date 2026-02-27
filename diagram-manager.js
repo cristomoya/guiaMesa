@@ -35,6 +35,7 @@
     let applyToken = 0;
     let expChangeObserver = null;
     let expChangeTimer = null;
+    let previewConfirmAction = null;
 
     // ── Catálogo ─────────────────────────────────────────────
 
@@ -147,7 +148,7 @@
 
     function parsePumlMeta(source) {
         const meta = { nombre: '', descripcion: '', icono: '📄' };
-        source.split('\n').slice(0, 15).forEach(line => {
+        source.split(' ').slice(0, 15).forEach(line => {
             const m = line.match(/^\/\/\s*(nombre|descripcion|icono)\s*:\s*(.+)$/i);
             if (!m) return;
             const k = m[1].toLowerCase();
@@ -156,6 +157,103 @@
             if (k === 'icono')       meta.icono       = m[2].trim();
         });
         return meta;
+    }
+
+    function sanitizePreviewLabel(text) {
+        return String(text || '')
+            .replace(/\bimg\s*:[^; ]+/gi, '')
+            .replace(/\bbookmark\s*:[^; ]+/gi, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function getPreviewInfo(source) {
+        const normalized = String(source || '');
+        const parsed = getCachedFlowDefinition(normalized);
+
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            const labels = parsed
+                .map(step => sanitizePreviewLabel(step && step.texto))
+                .filter(Boolean)
+                .slice(0, 5);
+            return { stepCount: parsed.length, labels };
+        }
+
+        const fallbackLabels = [];
+        let fallbackStepCount = 0;
+        const re = /#(?:[0-9A-Fa-f]{6,8})\s*:\s*([\s\S]*?);|:\s*([\s\S]*?);/g;
+        let match;
+        while ((match = re.exec(normalized)) !== null) {
+            const raw = match[1] || match[2] || '';
+            const label = sanitizePreviewLabel(raw);
+            if (!label) continue;
+            fallbackStepCount += 1;
+            if (fallbackLabels.length < 5) fallbackLabels.push(label);
+        }
+
+        return { stepCount: fallbackStepCount, labels: fallbackLabels };
+    }
+
+    function ensurePreviewModal() {
+        if (document.getElementById('dmPreviewModal')) return;
+
+        const modal = document.createElement('div');
+        modal.id = 'dmPreviewModal';
+        modal.className = 'dm-preview-modal';
+        modal.innerHTML = `
+            <div class="dm-preview-backdrop"></div>
+            <div class="dm-preview-card" role="dialog" aria-modal="true" aria-labelledby="dmPreviewTitle">
+                <h3 id="dmPreviewTitle" class="dm-preview-title">Vista previa del diagrama</h3>
+                <div id="dmPreviewHeadline" class="dm-preview-headline"></div>
+                <div id="dmPreviewSteps" class="dm-preview-steps"></div>
+                <ol id="dmPreviewLabels" class="dm-preview-labels"></ol>
+                <div class="dm-preview-note">El progreso actual se conserva.</div>
+                <div class="dm-preview-actions">
+                    <button type="button" id="dmPreviewCancel" class="dm-btn dm-btn-secondary">Cancelar</button>
+                    <button type="button" id="dmPreviewApply" class="dm-btn dm-btn-primary">Aplicar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        const close = () => {
+            modal.classList.remove('dm-preview-open');
+            previewConfirmAction = null;
+        };
+        modal.querySelector('#dmPreviewCancel').addEventListener('click', close);
+        modal.querySelector('.dm-preview-backdrop').addEventListener('click', close);
+        modal.querySelector('#dmPreviewApply').addEventListener('click', () => {
+            const action = previewConfirmAction;
+            close();
+            if (typeof action === 'function') action();
+        });
+    }
+
+    function openPreviewModal(entryName, source, onConfirm) {
+        ensurePreviewModal();
+        const preview = getPreviewInfo(source);
+        const modal = document.getElementById('dmPreviewModal');
+        const headline = modal.querySelector('#dmPreviewHeadline');
+        const steps = modal.querySelector('#dmPreviewSteps');
+        const list = modal.querySelector('#dmPreviewLabels');
+
+        headline.textContent = `Aplicar "${entryName}" al expediente actual?`;
+        steps.textContent = `Pasos detectados: ${preview.stepCount}`;
+        list.replaceChildren();
+        if (preview.labels.length === 0) {
+            const li = document.createElement('li');
+            li.textContent = '(No se detectaron etiquetas)';
+            list.appendChild(li);
+        } else {
+            preview.labels.forEach((label) => {
+                const li = document.createElement('li');
+                li.textContent = label;
+                list.appendChild(li);
+            });
+        }
+
+        previewConfirmAction = onConfirm;
+        modal.classList.add('dm-preview-open');
     }
 
     function getActiveExpId() {
@@ -312,7 +410,7 @@
 
         // Botón reset
         resetBtn.addEventListener('click', () => {
-            if (!confirm('¿Restaurar el diagrama predeterminado?\nEl progreso actual se conserva.')) return;
+            if (!confirm('¿Restaurar el diagrama predeterminado? El progreso actual se conserva.')) return;
             const expId = getActiveExpId();
             clearActiveDiagram(expId);
             applyDiagram(BUILT_IN_SOURCE);
@@ -463,18 +561,25 @@
             // Usar
             if (btnApply) {
                 btnApply.addEventListener('click', () => {
-                    if (isBuiltin) {
-                        clearActiveDiagram(expId);
-                        applyDiagram(BUILT_IN_SOURCE);
-                    } else {
-                        const found = reg.find(r => r.id === entry.id);
-                        if (found) {
-                            setActiveDiagram(expId, { ...found, source: undefined }, found.source);
-                            applyDiagram(found.source);
+                    const sourceToApply = isBuiltin
+                        ? BUILT_IN_SOURCE
+                        : (entry.source || (reg.find(r => r.id === entry.id) || {}).source || '');
+                    if (!sourceToApply) return;
+
+                    openPreviewModal(entry.nombre || 'Diagrama', sourceToApply, () => {
+                        if (isBuiltin) {
+                            clearActiveDiagram(expId);
+                            applyDiagram(BUILT_IN_SOURCE);
+                        } else {
+                            const found = reg.find(r => r.id === entry.id);
+                            if (found) {
+                                setActiveDiagram(expId, { ...found, source: undefined }, found.source);
+                                applyDiagram(found.source);
+                            }
                         }
-                    }
-                    refreshPanel();
-                    showDmToast(`✅ Diagrama "${entry.nombre}" aplicado`);
+                        refreshPanel();
+                        showDmToast(`OK: Diagrama "${entry.nombre}" aplicado`);
+                    });
                 });
             }
 
@@ -533,10 +638,13 @@
 
             addToRegistry(meta, source);
             const expId = getActiveExpId();
-            setActiveDiagram(expId, meta, source);
-            applyDiagram(source, { force: true });
             refreshPanel();
-            showDmToast(`✅ Diagrama "${meta.nombre}" cargado`);
+            openPreviewModal(meta.nombre, source, () => {
+                setActiveDiagram(expId, meta, source);
+                applyDiagram(source, { force: true });
+                refreshPanel();
+                showDmToast(`OK: Diagrama "${meta.nombre}" cargado y aplicado`);
+            });
             e.target.value = '';
         };
         reader.readAsText(file);
@@ -676,6 +784,39 @@
             z-index:9999; pointer-events:none;
         }
         .dm-toast-show { opacity:1; transform:translateY(0); }
+        .dm-preview-modal {
+            position:fixed;
+            inset:0;
+            display:none;
+            z-index:10000;
+        }
+        .dm-preview-modal.dm-preview-open { display:block; }
+        .dm-preview-backdrop {
+            position:absolute;
+            inset:0;
+            background:rgba(17,24,39,.45);
+        }
+        .dm-preview-card {
+            position:absolute;
+            left:50%;
+            top:50%;
+            transform:translate(-50%,-50%);
+            width:min(460px,calc(100vw - 24px));
+            max-height:calc(100vh - 24px);
+            overflow:auto;
+            background:#fff;
+            border-radius:12px;
+            border:1px solid #ddd6fe;
+            box-shadow:0 12px 30px rgba(0,0,0,.25);
+            padding:14px;
+        }
+        .dm-preview-title { margin:0 0 8px; font-size:16px; color:#1e1b4b; }
+        .dm-preview-headline { font-size:13px; color:#111827; font-weight:600; margin-bottom:6px; }
+        .dm-preview-steps { font-size:12px; color:#374151; margin-bottom:8px; }
+        .dm-preview-labels { margin:0; padding-left:20px; font-size:12px; color:#111827; }
+        .dm-preview-labels li { margin-bottom:4px; }
+        .dm-preview-note { margin-top:8px; font-size:11px; color:#6b7280; }
+        .dm-preview-actions { margin-top:12px; display:flex; justify-content:flex-end; gap:8px; }
         `;
         document.head.appendChild(s);
     }

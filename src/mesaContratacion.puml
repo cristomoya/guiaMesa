@@ -378,28 +378,40 @@ endif
 #E5D4FF:Pulsar "Finalizar";
 
 |Sistema|
-#052b02:Actualizar estados y cerrar acto;
-
+#052b02:Actualizar estados y cerrar acto;ç
 |OA|
-#FFD8A8:FASE 5: Mejor valorado;
+
+
+    #FFD8A8:FASE: Propuesta de adjudicación;
+
+    #A7D3F2:Iniciar Acto de Propuesta de Adjudicación
+    img:Image_160.png bookmark:bookmark80;
+    if (¿Quedan licitadores válidos?) then (Sí)
+        #A7D3F2:Proponer adjudicatario img:Image_163.png ;
+    else (No)
+        #FFD8A8:Proponer Desierto img:Image_163.png;
+    endif
+
+    #E34220:Pulsar "Proponer adjudicación y avisar al órgano responsable" img:Image_168.png;
+    #E34220:Marcar "Enviar Informe al Órgano de Contratación" (opcional);
+    #A7D3F2:Generar Informe de Propuesta de Adjudicación (opcional) img:Image_165.png
+    bookmark:bookmark87;
+    #E5D4FF:Finalizar;
+
+    |Sistema|
+    #052b02:Notificar al Órgano de Contratación (OC)la propuesta/informe;
+    
+    |OA|
+    #FFD8A8:FASE 5: Mejor valorado;
 
 if (¿Requerimiento por Mesa de Contratación?) then (Sí)
-    note right
-        Este flujo es cuando el requerimiento
-        lo realiza la Mesa de Contratación
-    end note
-
+    
 
     #A7D3F2:Iniciar "Acto de Mejor Valorado - Requerimiento" img:Image_172.png
     bookmark:bookmark90;
     #E34220:Seleccionar licitador;
     #E34220:Pulsar "Proponer mejor valorado" img:Image_175.png;
-    note right
-
-        #E34220:Inicia envío de comunicación img:Image_176.png;
-        de requerimiento
-    end note
-
+   
     E34220:Rellenar texto del acuerdo;
     E34220:guardar;
     E34220: Comunicaciones: Requerimieto de documentación img:Image_177.png;
@@ -436,37 +448,8 @@ if (¿Requerimiento por Mesa de Contratación?) then (Sí)
 
     endif
     |OA|
-    #FFD8A8:FASE 7: Propuesta de adjudicación;
-
-
-
-
-
-
-    #A7D3F2:Iniciar Acto de Propuesta de Adjudicación
-    img:Image_160.png bookmark:bookmark80;
-    if (¿Quedan licitadores válidos?) then (Sí)
-        #A7D3F2:Proponer adjudicatario img:Image_163.png ;
-    else (No)
-        #FFD8A8:Proponer Desierto img:Image_163.png;
-    endif
-
-
-
-    #E34220:Pulsar "Proponer adjudicación y avisar al órgano responsable" img:Image_168.png;
-    #E34220:Marcar "Enviar Informe al Órgano de Contratación" (opcional);
-    #A7D3F2:Generar Informe de Propuesta de Adjudicación (opcional) img:Image_165.png
-    bookmark:bookmark87;
-    #E5D4FF:Finalizar;
-
-    |Sistema|
-    #052b02:Notificar al Órgano de Contratación (OC)
-    la propuesta/informe;
 else (No: Requerimiento por OC)
-    note right
-        Flujo cuando el requerimiento
-        lo realiza el Órgano de Contratación
-    end note
+   
 endif
 
 |Sistema|

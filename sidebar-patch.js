@@ -363,7 +363,7 @@
             });
             deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (confirm(`Eliminar el expediente "${exp.nombre}" y todos sus datos?\nEsta accion no se puede deshacer.`)) {
+                if (confirm(`Eliminar el expediente "${exp.nombre}" y todos sus datos? Esta accion no se puede deshacer.`)) {
                     ExpedienteManager.deleteExpediente(exp.id);
                     if (_activeId === exp.id) {
                         _activeId = ExpedienteManager.getActiveId();
@@ -493,7 +493,7 @@
         const checks = ExpedienteManager.getCheckpoints(_activeId);
         const cp = checks.find(c => c.cpId === cpId);
         if (!cp) return;
-        if (!confirm(`¿Restaurar al punto de control "${cp.label}"?\nEl progreso actual se perderá.`)) return;
+        if (!confirm(`¿Restaurar al punto de control "${cp.label}"? El progreso actual se perderá.`)) return;
 
         // Guardar estado restaurado
         ExpedienteManager.saveFlowState(_activeId, cp.fluidState);

@@ -18,6 +18,7 @@
 ### Control de cambios
 | Version | Fecha       | Autor            | Descripcion del cambio |
 |---------|-------------|------------------|------------------------|
+| 1.3.3   | 27/02/2026  | Equipo funcional | Navegacion directa a paso, carga de `.puml` externo por `data-src`, soporte de enlaces URL/ancla y correcciones de parser/codificacion |
 | 1.3.0   | 18/02/2026  | Equipo funcional | Se incorpora gestion de diagramas .puml por expediente, optimizacion de carga y aplicacion dinamica del flujo |
 | 1.2.0   | 18/02/2026  | Equipo funcional | Se incorpora gestion multi-expediente, puntos de control y temporizadores configurables de plazos |
 | 1.1.0   | 18/02/2026  | Equipo funcional | Actualizacion del manual con timeline detallada, autocompletado de pasos del sistema y detalle ampliado de expediente XML |
@@ -67,7 +68,7 @@ Incluye:
 ## 5.2 Validacion inicial
 1. Confirmar que se visualiza el panel lateral.
 2. Confirmar carga del diagrama de pasos.
-3. Verificar disponibilidad de controles: `Retroceder`, `Continuar`, `Reiniciar`, `Cargar XML`, `Limpiar Datos`, `Mostrar/Ocultar` (timeline).
+3. Verificar disponibilidad de controles: `Retroceder`, `Continuar`, `Reiniciar`, `Ir a paso`, `Cargar XML`, `Limpiar Datos`, `Mostrar/Ocultar` (timeline).
 4. Verificar panel `Diagrama de flujo` para carga y seleccion de `.puml`.
 
 ## 6. Operacion funcional
@@ -75,6 +76,7 @@ Incluye:
 - `Continuar`: completa el paso actual y avanza al siguiente.
 - `Retroceder`: retorna al paso visible anterior.
 - `Reiniciar`: reinicia la secuencia operativa.
+- `Ir a paso`: fija un paso concreto como activo y marca como completados los pasos visibles anteriores.
 - Click en el paso actual: marca el paso como completado y avanza (solo pasos manuales).
 - Pasos actor `Sistema`: se completan automaticamente.
 
@@ -142,6 +144,7 @@ Atajos:
 - Se puede cargar fichero `.puml` desde el panel `Diagrama de flujo`.
 - El diagrama cargado se almacena en catalogo y puede aplicarse a otros expedientes.
 - Opcion para restaurar el diagrama predeterminado.
+- Tambien se puede definir un diagrama externo por defecto desde `sidebar.html` con `data-src` en `plantumlSource`.
 
 ## 9. Persistencia y continuidad
 La extension conserva en almacenamiento local:

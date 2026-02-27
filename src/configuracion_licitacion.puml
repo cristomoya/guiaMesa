@@ -1,0 +1,227 @@
+@startuml
+skinparam activityBackgroundColor #E8F4FD
+skinparam activityBorderColor #2E86AB
+skinparam activityDiamondBackgroundColor #FFF3CD
+skinparam activityDiamondBorderColor #F0A500
+skinparam arrowColor #2E86AB
+skinparam backgroundColor #FAFAFA
+skinparam titleFontSize 18
+skinparam titleFontColor #1A1A2E
+
+title Configuración de la Licitación Electrónica (Plataforma de Contratación del Sector Público - PLACSP)
+
+|#E8F4FD|Órgano de contratación (OC)|
+|#FFF0E6|Sistema|
+|#E8F6E8|Órgano de Asistencia (OA)|
+
+|Órgano de contratación (OC)|
+start
+:Acceder a PLACSP con certificado electrónico [Roles válidos: PUBLICADOR (POC-PUB), EDITOR (POC-ED), RESPONSABLE (ROC) o ADMINISTRADOR (AOC)] bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part1.htm;
+
+
+:Crear nuevo expediente o copiar uno existente img:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/Image_003.png bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part3.htm;
+
+|Sistema|
+:Generar Espacio Virtual de Licitación (EVL);
+
+|Órgano de contratación (OC)|
+:Cumplimentar datos básicos del expediente img:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/Image_004.png bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part3.htm;
+
+
+:Seleccionar códigos CPV img:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/Image_005.png bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part3.htm;
+
+:Guardar Licitación bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part3.htm;
+
+
+
+'--- CONDICIONES DE PRESENTACIÓN ---
+|Órgano de contratación (OC)|
+:Abrir sección "Condiciones de Presentación de Oferta" bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part5.htm img:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/Image_010.png;
+
+|Órgano de contratación (OC)|
+:Seleccionar Forma de Presentación bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part6.htm;
+
+if (Forma de presentacion) then (Electronica o Manual y/o Electronica)
+
+  :pantalla img:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/Image_015.png bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part7.htm;
+
+  if (Presentacion a traves de Plataforma?) then (Si)
+    '--- ORGANO DE ASISTENCIA ---
+    :Asignar Organo de Asistencia (OA) bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part12.htm;
+    note right: Obligatorio para presentacion electronica a traves de Plataforma
+
+    if (OA ya existe?) then (No)
+      :Crear nuevo Organo de Asistencia (Administrador AOC) bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part12.htm;
+      :Registrar Secretario del OA bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part12.htm;
+
+      |Organo de Asistencia (OA)|
+      :Activar el Organo de Asistencia bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part12.htm;
+
+      |Órgano de contratación (OC)|
+    endif
+
+    :Seleccionar OA de la lista bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part12.htm;
+  else (No - A traves de Sistemas Externos)
+    note right: Solo informativo.
+  endif
+
+else (Manual)
+  note right: Sin herramienta electronica. Custodia fisica.
+endif
+
+'--- FECHAS ---
+:Configurar Fechas bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part13.htm;
+note right: - Fecha final obtención pliegos - Fecha final presentación de solicitudes   de participación (si aplica) - Fecha final presentación de ofertas
+
+:Guardar Licitación bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part13.htm;
+
+'--- EVENTOS ---
+if (¿Conoce fechas y lugar de apertura de sobres?) then (Sí)
+  :Configurar Eventos de Apertura bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part14.htm;
+  :Evento de apertura oferta económica bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part15.htm;
+  :Otros eventos (sobres técnico/administrativo) bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part16.htm;
+else (No)
+  if (¿Delegar en OA?) then (Sí)
+    :Activar configuración para OA ("Activar para OA") bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part14.htm;
+
+    |Órgano de Asistencia (OA)|
+    :Actualizar fechas y eventos de apertura de sobres bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part14.htm;
+
+    |Órgano de contratación (OC)|
+  else (No)
+    :Dejar sin fechas de evento (OA planificará como tarea pendiente) bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part14.htm;
+  endif
+endif
+
+:Guardar Licitación bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part14.htm;
+
+'--- LOTES ---
+if (¿Procedimiento con Lotes?) then (Sí)
+  :Configurar uso de Lotes (pestaña PPT) bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part17.htm;
+  :Indicar obligatoriedad de oferta (todos / un lote / uno o varios lotes) bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part17.htm;
+  :Registrar cada lote (número, título, descripción, CPV, importes) bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part17.htm;
+  if (¿Permite Ofertas Integradoras?) then (Sí)
+    :Configurar combinaciones de Ofertas Integradoras (pestaña PPT) bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part18.htm;
+  endif
+endif
+
+'--- FINANCIACIÓN EUROPEA ---
+if (¿Financiación Europea?) then (Sí)
+  :Registrar información de Financiación Europea (pestaña PCAP) bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part19.htm;
+  note right: Fuente, Programas UE-Localizador
+endif
+
+'--- REQUISITOS DE PARTICIPACIÓN ---
+:Acceder a Requisitos Previos de Participación (PCAP > Condiciones de admisión de candidatos) bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part20.htm;
+
+repeat
+  :Seleccionar tipo de requisito bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part21.htm;
+  note right: Capacidad de contratar, Clasificación, Solvencia técnica/económica, Habilitación profesional, Experiencia...
+
+  if (¿Procedimiento con Lotes?) then (Sí)
+    :Indicar si el requisito aplica a todos los lotes o a uno/varios bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part24.htm;
+  endif
+
+  :Definir descripción y valor del requisito bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part21.htm;
+
+  :Seleccionar Forma(s) de Acreditación bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part22.htm;
+  note right: - Documento (DEUC, declaración responsable...) - Autorización consulta sistemas terceros   (ROLECE, AEAT, TGSS, SVDI) - Valor estructurado
+
+  if (¿Acreditación por Documento?) then (Sí)
+    :Seleccionar tipo de documento del catálogo o crear nuevo tipo de documento bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part22.htm;
+  endif
+
+  :Guardar requisito bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part20.htm;
+repeat while (¿Más requisitos?) is (Sí)
+->No;
+
+:Guardar Licitación bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part20.htm;
+
+'--- CRITERIOS DE ADJUDICACIÓN ---
+:Acceder a Criterios de Adjudicación (PCAP > Condiciones de adjudicación) bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part26.htm;
+
+repeat
+  :Crear nuevo criterio de adjudicación bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part27.htm;
+  note right: - Tipo: Cuantificable automáticamente   (precio / otros) o Juicio de Valor - Nombre, descripción, ponderación - Mínimo, Máximo, Expresión (fórmula)
+
+  if (¿Procedimiento con Lotes?) then (Sí)
+    :Indicar si el criterio aplica a todos los lotes o a uno/varios bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part28.htm;
+  endif
+
+  :Guardar criterio bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part26.htm;
+repeat while (¿Más criterios?) is (Sí)
+->No;
+
+:Guardar Licitación bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part26.htm;
+
+'--- CONFIGURACIÓN DE SOBRES ---
+:Acceder a Configuración de Sobres (PCAP > Preparación de los sobres) bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part29.htm;
+note right: ⚠ Crear sobres DESPUÉS de definir lotes, requisitos y criterios
+
+repeat
+  :Crear nuevo sobre bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part31.htm;
+  :Definir datos generales del sobre bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part31.htm;
+  note right: Nombre, Tipo de sobre (Administrativo / Técnico / Económico / Documentación adicional), Evento asociado
+
+  :Configurar Condiciones de Presentación bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part30.htm;
+  note right: - Soporte: físico/presencial o electrónico/telemático - Firma: obligatoria o no - Cifrado: sí/no (recomendado en técnico y económico) - Descifrado/apertura anticipada: sí/no - Sobre anónimo: sí/no
+
+  if (¿Procedimiento con Lotes?) then (Sí)
+    :Asignar lotes al sobre bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part31.htm;
+  endif
+
+  if (¿Tipo sobre Administrativo?) then (Sí)
+    :Revisar y ajustar Requisitos Previos asignados al sobre bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part31.htm;
+    :Añadir documentos complementarios opcionales si es necesario bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part31.htm;
+  endif
+
+  if (¿Tipo sobre Técnico o Económico?) then (Sí)
+    :Revisar Criterios de Adjudicación asignados al sobre bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part31.htm;
+    if (¿Ofertas Integradoras en sobre económico?) then (Sí)
+      :Añadir documentos de oferta integradora bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part18.htm;
+    endif
+  endif
+
+  :Guardar sobre bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part31.htm;
+repeat while (¿Más sobres a configurar?) is (Sí)
+->No;
+
+:Guardar Licitación bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part29.htm;
+
+'--- PROCEDIMIENTOS POR INVITACIÓN ---
+if (¿Procedimiento por Invitación? (Negociado sin publicidad, Contrato menor, Derivado de Acuerdo Marco)) then (Sí)
+  :Registrar Licitadores (pestaña "Licitadores") bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part35.htm;
+  note right: Razón social, NIF, correo electrónico
+
+  :Enviar Comunicación / Invitación (pestaña "Comunicaciones") bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part35.htm;
+  note right: Seleccionar licitadores, anexar documento, indicar sobres a remitir como respuesta
+
+  |Sistema|
+  :Notificar a licitadores por correo electrónico;
+
+  |Órgano de contratación (OC)|
+else (No - Procedimiento abierto)
+  '--- PUBLICACIÓN ---
+  :Previsualizar anuncio de licitación bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part32.htm;
+
+  if (¿Información correcta?) then (Sí)
+    :Publicar Anuncio de Licitación bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part33.htm;
+    :Publicar Anuncio de Pliegos bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part33.htm;
+
+    |Sistema|
+    :Generar Herramienta de Preparación y Presentación de Ofertas (HPO) para los licitadores;
+
+    |Órgano de contratación (OC)|
+  else (No)
+    :Corregir configuración bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part32.htm;
+    if (¿Ya hay herramienta publicada?) then (Sí)
+      :Publicar Rectificación (de licitación Y de pliegos) bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/configuraci%C3%B3nLicitacion/PLACSP_OC_LE_GuiaLicitacion_v3.4+PARTE+1/part34.htm;
+      note right: ⚠ Si el cambio afecta sobres, los licitadores deben iniciar una nueva preparación de oferta
+    endif
+  endif
+endif
+
+:Configuración de Licitación completada ✓;
+stop
+
+@enduml
