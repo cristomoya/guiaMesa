@@ -1,0 +1,344 @@
+@startuml
+skinparam ActivityFontSize 11
+skinparam ArrowFontSize 10
+
+|Órgano de Contratación|
+|Plataforma|
+|BOE|
+|DOUE|
+|FNMT|
+
+|Órgano de Contratación|
+start
+:Acceder a la Plataforma de Contratación del Sector Público;
+if ("¿Existe el expediente") then (Si)
+:Seguir;
+else (No)
+:Crear nueva licitación en el sistema;
+:Introducir número de expediente único;
+endif
+if ("El contrato está sujero a regulación armonizada") Then (Si)
+:Indicar si el contrato está sujeto a regulación armonizada SARA/Umbral;
+:Seleccionar directiva de aplicación (2014/24/UE, 2014/23/UE, 2009/81/CE);
+else (No)
+endif
+
+:Seleccionar tipo de contrato (obras, servicios, suministros, concesión);
+:Seleccionar subtipo de contrato;
+:Indicar si es contrato mixto;
+:Describir objeto del contrato;
+:Introducir descripción del procedimiento;
+:Indicar si aplica compra pública innovadora (CPTI o CPP);
+:Seleccionar sistema de contratación (acuerdo marco, sistema dinámico, etc.);
+:Seleccionar procedimiento de contratación (abierto, restringido, negociado, etc.);
+:Describir características del procedimiento;
+:Seleccionar tipo de tramitación (ordinaria, emergencia, urgencia);
+:Seleccionar tramitación del gasto (ordinaria, anticipada);
+:Introducir valor estimado del contrato;
+:Introducir presupuesto base de licitación con y sin impuestos;
+:Introducir fecha prevista de inicio del proceso de adjudicación;
+:Seleccionar país de ejecución del contrato;
+:Seleccionar código NUTS del lugar de ejecución;
+:Seleccionar código CPV principal y adicionales;
+:Guardar datos generales del expediente;
+:Configurar condiciones de presentación de ofertas;
+:Seleccionar forma de presentación (manual, electrónica, manual y/o electrónica);
+:Seleccionar idiomas adicionales al español admitidos;
+:Indicar si se aceptan variantes;
+:Indicar si aplica Acuerdo de Contratación Pública (ACP);
+:Indicar si las ofertas deben incluir catálogos electrónicos;
+:Introducir fecha y hora final de obtención de pliegos;
+:Introducir fecha y hora final de presentación de ofertas;
+:Introducir descripción adicional sobre condiciones de presentación;
+:Indicar si se adjudicará mediante subasta electrónica;
+:Configurar evento de apertura de oferta económica;
+:Introducir nombre del evento de apertura económica;
+:Introducir fecha y hora de apertura de ofertas económicas;
+:Introducir descripción del evento de apertura económica;
+:Seleccionar tipo de acto (público, restringido, privado);
+:Introducir condiciones para la asistencia al acto;
+:Introducir lugar, calle, CP, población y país de apertura;
+:Crear otros eventos de apertura de ofertas adicionales si procede;
+:Introducir tipo de evento (administrativa, técnica, etc.) para cada evento adicional;
+if("¿Es un acuerdo marco?") then (Si)
+:Configurar campos específicos de acuerdo marco si aplica;
+:Introducir importe máximo del acuerdo marco;
+:Introducir número máximo de participantes en el acuerdo marco;
+else(No)
+endif
+:Acceder a pestaña PCAP para introducir cláusulas administrativas;
+if("¿Existe financiación europea?") then (Si)
+:Seleccionar fuente de financiación europea;
+:Introducir programa UE o localizador de financiación;
+else (No)
+
+endif
+:Introducir fórmula de revisión de precios si aplica;
+:Introducir condiciones de admisión de candidatos;
+:Crear requisitos previos de participación;
+:Seleccionar tipo de requisito (capacidad, clasificación, solvencia económica, solvencia técnica);
+:Introducir descripción de cada requisito de participación;
+:Seleccionar criterio de clasificación requerida según RD 773/2015;
+:Seleccionar tipo de solvencia económica o financiera requerida;
+:Introducir umbral, expresión y periodo de solvencia económica;
+:Seleccionar tipo de solvencia técnica o profesional requerida;
+:Introducir umbral, expresión y periodo de solvencia técnica;
+:Indicar habilitación empresarial o profesional requerida;
+:Introducir años de experiencia mínima requeridos;
+:Introducir número mínimo de empleados requeridos;
+:Indicar si se requieren currículos vitae de empleados;
+:Marcar criterios que serán usados para selección en segunda fase si aplica;
+if ("¿Es un procedimiento restringido?") then (Si)
+:Configurar limitación del número de licitadores a invitar;
+:Introducir criterios objetivos para selección de candidatos;
+:Introducir número previsto, máximo y mínimo de licitadores a invitar;
+else (No)
+endif
+:Indicar negociación innecesaria si aplica Directiva 2014/24;
+:Seleccionar motivos de exclusión aplicables;
+:Introducir descripción de cada motivo de exclusión;
+:Pulsar botón Añadir para cada motivo de exclusión;
+:Configurar condiciones de adjudicación;
+if ("¿Se exigen garantías?") then (Si)
+:Introducir importe o porcentaje de garantía provisional;
+:Introducir fecha o duración de constitución de garantía provisional;
+:Introducir importe o porcentaje de garantía definitiva;
+:Introducir fecha o duración de constitución de garantía definitiva;
+:Introducir importe o porcentaje de garantía complementaria si aplica;
+:Introducir fecha o duración de garantía complementaria si aplica;
+else (No)
+endif
+:Introducir fecha límite o duración de validez de la oferta;
+:Crear criterios de adjudicación;
+:Seleccionar tipo de criterio (cuantificable automáticamente o juicio de valor);
+:Seleccionar subtipo de criterio (precio u otro);
+:Introducir descripción del criterio de adjudicación;
+:Introducir ponderación del criterio;
+:Introducir valores mínimo y máximo del rango si aplica;
+:Introducir expresión de ponderación si aplica;
+:Configurar condiciones de ejecución;
+:Indicar si se utilizará pedido electrónico;
+:Indicar si se aceptará factura electrónica;
+:Indicar si se utilizará pago electrónico;
+:Introducir condiciones financieras si aplica directiva 2014/25 o 2009/81;
+if ("¿Se exige una forma jurídica especial al licitador") then (Si)
+:Indicar forma jurídica requerida del licitador si aplica;
+:Introducir descripción de la forma jurídica requerida;
+else (No)
+endif
+
+:Introducir descripción del emplazamiento de ejecución;
+:Introducir condiciones adicionales del emplazamiento;
+:Introducir dirección, CP y población del lugar de ejecución;
+:Introducir fecha de inicio y fecha final o duración de ejecución;
+:Introducir justificación de la duración del contrato;
+:Introducir número máximo de prórrogas;
+:Introducir descripción de las prórrogas si el número máximo es mayor que cero;
+:Introducir descripción de opciones si aplica;
+:Introducir porcentaje o importe permitido de subcontratación si aplica;
+:Introducir descripción adicional de condiciones de subcontratación;
+:Seleccionar tipo de condición especial de ejecución;
+:Introducir descripción de cada condición especial de ejecución;
+:Pulsar Añadir para cada condición especial de ejecución;
+
+if ("Contratación estratégica") Then (Si)
+:Seleccionar tipo de contratación estratégica (innovadora, social, verde, ninguna);
+:Seleccionar opciones de contratación verde si aplica;
+:Seleccionar opciones de contratación social si aplica;
+:Seleccionar opciones de contratación pública de soluciones innovadoras si aplica;
+else (no)
+
+endif
+
+:Indicar si aplica Directiva 2019/1161 sobre vehículos limpios;
+:Seleccionar términos de aplicación de la directiva de vehículos limpios;
+:Crear sobres de la oferta pulsando Nuevo Sobre;
+:Introducir alias identificador del sobre;
+:Seleccionar tipo de sobre (administrativo, económico, técnico);
+:Asociar evento de apertura al sobre;
+:Introducir descripción adicional del sobre;
+:Asignar lotes al sobre o indicar toda la licitación;
+If ("¿Están configurados los contactos?") then (No)
+:Acceder a pestaña Contactos;
+:Verificar y completar datos del proveedor de pliegos;
+:Verificar y completar datos de recepción de ofertas;
+:Verificar y completar datos de contacto para información adicional;
+:Introducir información sobre recursos y organismo receptor de recursos;
+:Introducir dirección para recepción de recursos (nombre, país, localidad);
+:Introducir información de arbitraje si aplica;
+else (Si)
+endif
+If ("¿Hay lotes?") then (Si)
+:Acceder a pestaña PPT para configurar lotes si aplica;
+:Marcar opción Utilizar Lotes como Sí;
+:Indicar a qué lotes se debe ofertar (todos, uno, uno o varios);
+:Indicar número máximo de lotes a los que puede ofertar el licitador;
+:Indicar número máximo de lotes adjudicables a un único licitador;
+:Introducir texto sobre derecho a adjudicar contratos combinados;
+:Crear cada lote pulsando Nuevo Lote;
+:Introducir número de lote;
+:Introducir título del lote;
+:Introducir descripción del lote;
+:Introducir valor estimado del lote;
+:Introducir importe del lote con y sin impuestos;
+:Seleccionar CPV del lote;
+:Seleccionar código NUTS del lugar de ejecución del lote;
+:Pulsar Aceptar Lote para guardar cada lote;
+else (No)
+endif
+If ("¿Hay entregables?") then (Si)
+:Crear entregables si aplica pulsando Nuevo Entregable;
+:Introducir descripción del entregable;
+:Configurar cantidad fija o variable del entregable;
+:Configurar plazo de ejecución por intervalo o duración del entregable;
+:Introducir importe sin impuestos del entregable;
+:Introducir información adicional de especificación técnica del entregable;
+:Seleccionar CPV del entregable;
+:Adjuntar documento de especificaciones técnicas del entregable;
+:Introducir nombre, marca y modelo del producto si aplica;
+:Introducir descripción del producto;
+:Introducir código EAN del producto si aplica;
+:Introducir propiedades del producto (nombre y valor);
+:Introducir dimensiones del producto (nombre, valor y unidad);
+:Adjuntar documento descriptivo del producto si aplica;
+:Pulsar Aceptar Entregable para guardar cada entregable;
+else (No)
+endif
+:Guardar licitación pulsando Guardar Licitación;
+:Seleccionar "previsualizar" en columna Acciones de pestaña Resumen Licitación;
+:Indicar si se enviará anuncio al DOUE;
+:Indicar si se enviará anuncio al BOE;
+:Indicar si los anuncios ya han sido publicados por otros medios;
+:Pulsar Siguiente para continuar con previsualización;
+:Seleccionar previsualizar anuncio del perfil del contratante;
+:Seleccionar previsualizar anuncio a enviar al DOUE si aplica;
+:Pulsar Finalizar para iniciar proceso de verificación;
+
+|Plataforma|
+:Verificar datos obligatorios del expediente;
+:Validar consistencia de datos según tipo de contrato;
+:Validar consistencia según tipo de procedimiento;
+:Validar importes de licitación y lotes;
+:Validar configuración de lotes y entregables;
+:Validar campos obligatorios según directiva aplicable;
+
+if (¿Errores de validación?) then (Sí)
+:Mostrar ventana con lista detallada de errores;
+:Marcar con asterisco rojo los campos con error;
+:Mostrar enlace a cada campo con error;
+
+|Órgano de Contratación|
+:Revisar lista de errores mostrada;
+:Navegar a los campos con error usando los enlaces;
+:Corregir cada error indicado;
+:Guardar licitación tras correcciones;
+:Volver a seleccionar previsualizar;
+
+|Plataforma|
+:Repetir proceso de verificación y validación;
+else (No)
+:Generar vista previa del anuncio con marca BORRADOR;
+:Mostrar borrador del anuncio al órgano de contratación;
+
+|Órgano de Contratación|
+:Revisar contenido del borrador del anuncio;
+:Verificar que toda la información es correcta;
+:Pulsar Finalizar para volver a pestaña Resumen;
+:Seleccionar "publicar" en columna Acciones de pestaña Resumen Licitación;
+:Confirmar opciones de envío a diarios oficiales;
+:Pulsar botón Publicar en pantalla de confirmación;
+
+if (¿Enviar anuncio al DOUE?) then (Sí)
+|Plataforma|
+:Enviar anuncio al DOUE de forma inmediata;
+:Bloquear licitación para impedir modificaciones;
+:Registrar fecha y hora de envío al DOUE;
+
+|DOUE|
+:Recibir anuncio según formulario normalizado nº 2;
+:Procesar y revisar el anuncio recibido;
+:Emitir acuse de recibo con fecha y hora;
+:Publicar anuncio en Diario Oficial de la Unión Europea;
+:Notificar publicación efectiva a la Plataforma;
+
+|Plataforma|
+:Recibir acuse de recibo del DOUE;
+:Esperar publicación efectiva o mínimo 48 horas desde acuse;
+:Publicar automáticamente anuncio en perfil del contratante;
+:Desbloquear licitación tras publicación efectiva;
+:Notificar por correo electrónico al usuario asignado;
+:Mostrar fecha de envío al DOUE en tabla Resumen;
+
+else (No)
+|Plataforma|
+:Publicar anuncio inmediatamente en perfil del contratante;
+:Registrar fecha y hora de publicación en plataforma;
+endif
+
+if (¿Enviar anuncio al BOE?) then (Sí)
+|Plataforma|
+:Enviar anuncio al BOE de forma inmediata;
+:Registrar fecha y hora de envío al BOE;
+
+|BOE|
+:Recibir anuncio de la Plataforma;
+:Procesar el anuncio recibido;
+:Publicar anuncio en Boletín Oficial del Estado;
+:Proporcionar enlace de acceso a Extranet del BOE;
+
+|Plataforma|
+:Mostrar fecha de publicación en BOE en tabla Resumen;
+:Mostrar enlace al anuncio publicado en BOE;
+else (No)
+endif
+
+|Plataforma|
+:Habilitar visualización del anuncio publicado en formatos HTML, PDF y XML;
+:Mostrar mensaje de resultado de la operación de publicación;
+
+|Órgano de Contratación|
+:Verificar publicación correcta del anuncio de licitación;
+:Acceder a pestaña PPT para adjuntar pliego de prescripciones técnicas;
+:Seleccionar opción Documento en pestaña PPT;
+:Pulsar botón Anexar;
+:Navegar en el ordenador hasta localizar el fichero del PPT;
+:Seleccionar y cargar el documento PPT (máximo 50 MB por fichero);
+:Verificar que el conjunto de ficheros no supera 150 MB;
+:Acceder a pestaña PCAP para adjuntar pliego de cláusulas administrativas;
+:Seleccionar opción Documento en pestaña PCAP;
+:Pulsar botón Anexar;
+:Navegar en el ordenador hasta localizar el fichero del PCAP;
+:Seleccionar y cargar el documento PCAP;
+:Acceder a pestaña Anexos Pliego para documentos adicionales;
+:Pulsar botón Nuevo Documento;
+:Seleccionar y cargar cada documento anexo al pliego;
+:Pulsar Añadir Documento para hacer permanente cada documento;
+:Guardar licitación pulsando Guardar Licitación;
+:Seleccionar "publicar" para Pliegos en columna Acciones de pestaña Resumen;
+
+|Plataforma|
+:Verificar que existe anuncio de licitación publicado previamente;
+:Verificar que PPT y PCAP están ambos adjuntados;
+:Publicar documento de pliegos en perfil del contratante;
+:Generar documento de pliegos en formato HTML;
+:Generar documento de pliegos en formato PDF;
+:Generar documento de pliegos en formato XML;
+:Registrar fecha y hora de publicación de pliegos;
+:Solicitar certificación de sello de tiempo a la FNMT;
+
+|FNMT|
+:Certificar momento de publicación de los documentos;
+:Emitir sello de tiempo certificado;
+
+|Plataforma|
+:Incorporar enlace al sello de tiempo en tabla Resumen;
+:Habilitar enlaces Ver Documentos para HTML, PDF, XML y Sello de Tiempo;
+:Mostrar fecha de publicación de pliegos en tabla Resumen;
+
+|Órgano de Contratación|
+:Verificar publicación correcta de los pliegos;
+:Comprobar que los documentos son accesibles en los tres formatos;
+:Verificar coherencia entre información estructurada y documentos adjuntos;
+stop
+endif
+@enduml
