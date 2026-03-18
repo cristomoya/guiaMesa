@@ -2,29 +2,28 @@
 |Servicio|
 start
 
-repeat
+
 |Contratación|
   :abrir expediente bookmark:https://gestiona-08.espublico.com;
-  :Ficha de contratación bookmark:https://wekan.cristobalmoyalopez.es/b/44DcK8YTRA9gnX73A/contratos-menores;
+  :abrir tarjeta bookmark:https://wekan.cristobalmoyalopez.es/b/44DcK8YTRA9gnX73A/contratos-menores;
+repeat   
+|Servicio|  
+  :Ficha de contratación ;
   :Informe de necesidad;
 |Técnico|
 :Redactar prescripciones técnicas/proyecto obras;
-  |Contratación|
+:Firma prescripciones técnicas;
+|Contratación|
   :Repasar y comprobar que es correcto;
   backward:Avisar al servicio para que rectifique el error;
-repeat while (¿Es correcto?) is (No) 
+repeat while (¿Hay que rectificar la documentación?) is (Si) 
    
-
-
-
-
 |Contratación|
 :Enviar a la firma;
 
 |Concejal del servicio|
 :Firma ficha e informe;
-|Tecnico|
-:Firma prescripciones técnicas;
+
 |Contratación|
 :Solicitar RC;
 |Intervención|
@@ -36,6 +35,36 @@ if(¿Existe crédito) then (Si)
 else (No)
 |Contratación|
 :Avisar al concejal;
-:Esperar;
+endif
+|Contratación|
+:preparar informe Secretario;
+:Enviar a la firma Secretario;
+|Secretario|
+:firma;
+|Contratación|
+:Preparar invitaciones;
+:adjuntar Memoria técnica, modelo de declaración responsable y modelo de oferta econonómica;
+
+:Enviar a la firma (secretario valida y concejal de contratación firma);
+|Secretario|
+:Valida;
+|Concejal de contratación|
+:firma;
+|Contratación|
+#e0e0e0:⏳ Esperar plazo de ofertas;
+:incluir ofertas en expediente;
+:Comprobar ofertas;
+:Preparar propuesta de adjudicación sin fiscalización;
+:Enviar a la firma (Secretario y Concejal de contratación);
+|Secretario|
+:firma;
+|Concejal de contratación|
+:Firma;
+|Junta de Gobierno|
+:Acuerda la adjudicación;
+|Contratación|
+:Notificación;
+
+
 stop
 @enduml

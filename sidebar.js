@@ -95,6 +95,10 @@ function startExternalPlantUmlAutoRefresh() {
 }
 
 const PLANTUML_SOURCE = plantumlSourceEl ? String(plantumlSourceEl.textContent || '').trim() : '';
+const WEBEXT_API = typeof browser !== 'undefined'
+    ? browser
+    : (typeof chrome !== 'undefined' ? chrome : null);
+const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
         const PLACSP_DOC_URL = encodeURI('guia.html');
         const PLACSP_ASSETS_DIR = 'images';
         const SHOW_PHASE_VISUALS = false;
@@ -183,22 +187,26 @@ const PLANTUML_SOURCE = plantumlSourceEl ? String(plantumlSourceEl.textContent |
 
         function parseStepPayload(rawText) {
             const full = String(rawText || '').trim();
-            const imageMatch = full.match(/\bimg:(\S+)/i);
-            const bookmarkMatch = full.match(/\b(?:bm|bookmark):(\S+)/i);
-            let imageUrl = imageMatch ? imageMatch[1] : null;
-            let bookmark = bookmarkMatch ? bookmarkMatch[1] : null;
+            const extractMetaValue = (input, keyPattern) => {
+                const re = new RegExp(`\\b(?:${keyPattern}):(?:"([^"]+)"|'([^']+)'|(.+?))(?=\\s+\\b(?:img|bm|bookmark):|$)`, 'i');
+                const match = input.match(re);
+                if (!match) return { value: null, cleaned: input };
+                const value = match[1] || match[2] || match[3] || '';
+                const cleaned = input.replace(match[0], '').replace(/\s{2,}/g, ' ').trim();
+                return { value: value.trim(), cleaned };
+            };
+
+            const imageMeta = extractMetaValue(full, 'img');
+            const bookmarkMeta = extractMetaValue(imageMeta.cleaned, 'bm|bookmark');
+            let imageUrl = imageMeta.value;
+            let bookmark = bookmarkMeta.value;
             if (imageUrl && !/^https?:\/\//i.test(imageUrl) && !imageUrl.startsWith('/')) {
                 imageUrl = `${PLACSP_ASSETS_DIR}/${imageUrl}`;
             }
             if (bookmark && bookmark.startsWith('#')) {
                 bookmark = bookmark.slice(1);
             }
-            const text = normalizeStepText(
-                full
-                    .replace(/\bimg:\S+/ig, '')
-                    .replace(/\b(?:bm|bookmark):\S+/ig, '')
-                    .trim()
-            );
+            const text = normalizeStepText(bookmarkMeta.cleaned);
             return { text, imageUrl, bookmark };
         }
 
@@ -225,14 +233,18 @@ const PLANTUML_SOURCE = plantumlSourceEl ? String(plantumlSourceEl.textContent |
             const raw = String(bookmark || '').trim();
             let url = PLACSP_DOC_URL;
             if (raw) {
-                if (/^https?:\/\//i.test(raw)) {
+                if (/^(?:https?|file):\/\//i.test(raw)) {
                     url = raw;
+                } else if (/^[A-Za-z]:[\\/]/.test(raw)) {
+                    url = `file:///${raw.replace(/\\/g, '/')}`;
+                } else if (/^(?:\.{1,2}[\\/]|\/|[^#\s]+[\\/][^#\s]*|[^#\s]+\.[A-Za-z0-9]{1,8}(?:[#?].*)?)$/i.test(raw)) {
+                    url = new URL(raw.replace(/\\/g, '/'), window.location.href).href;
                 } else {
                     const anchor = raw.startsWith('#') ? raw.slice(1) : raw;
                     url = `${PLACSP_DOC_URL}#${anchor}`;
                 }
             }
-            window.open(url, '_blank', 'noopener,noreferrer');
+            window.open(encodeURI(url), '_blank', 'noopener,noreferrer');
         }
 
         function getActorColor(actor) {
@@ -252,7 +264,7 @@ const PLANTUML_SOURCE = plantumlSourceEl ? String(plantumlSourceEl.textContent |
             let currentActor = 'OA';
             const branchStack = [];
             const loopStack = [];
-            const tokenRegex = /(?:^|[\r\n])\s*\|([^|\r\n]+)\||(?:^|[\r\n])\s*#([0-9A-Fa-f]{6,8})\s*:\s*([\s\S]*?);|(?:^|[\r\n])\s*:+\s*([\s\S]*?);|(?:^|[\r\n])\s*if\s*\(([\s\S]*?)\)\s*(?:then|is)|(?:^|[\r\n])\s*\belse\b(?:\s*\(([\s\S]*?)\))?|(?:^|[\r\n])\s*\bendif\b|(?:^|[\r\n])\s*repeat\b|(?:^|[\r\n])\s*repeat while\s*\(([\s\S]*?)\)/gi;
+            const tokenRegex = /(?:^|[\r\n])\s*\|([^|\r\n]+)\||(?:^|[\r\n])\s*#([0-9A-Fa-f]{6,8})\s*:\s*([\s\S]*?);|(?:^|[\r\n])\s*:+\s*([\s\S]*?);|(?:^|[\r\n])\s*if\s*\(([\s\S]*?)\)\s*(?:then|is)|(?:^|[\r\n])\s*\belse\b(?:\s*\(([\s\S]*?)\))?|(?:^|[\r\n])\s*\bendif\b|(?:^|[\r\n])\s*repeat while\s*\(([\s\S]*?)\)|(?:^|[\r\n])\s*repeat\b/gi;
             let match;
 
             function getActiveConditions() {
@@ -403,36 +415,51 @@ const PLANTUML_SOURCE = plantumlSourceEl ? String(plantumlSourceEl.textContent |
         let stepTimestamps = {}; // Nuevo: almacenar cuándo se completó cada paso
         let stepStartTimes = {}; // Nuevo: almacenar cuándo se empezó cada paso
         let expedienteData = null; // Datos cargados del XML del expediente
+        let lastGestionaPromptSignature = '';
+        let gestionaWatcherBound = false;
 
         function loadData() {
-            const saved = localStorage.getItem('flujo_licitacion_mejorado_v1');
-            if (saved) {
-                const data = JSON.parse(saved);
-                currentStep = data.currentStep || 0;
-                completedSteps = new Set(data.completedSteps || []);
-                decisions = data.decisions || {};
-                stepNotes = data.stepNotes || {};
-                stepTimestamps = data.stepTimestamps || {};
-                stepStartTimes = data.stepStartTimes || {};
-                
-                // Registrar inicio del paso actual si no existe
-                const currentDef = flowDefinition[currentStep];
-                if (currentDef && !stepStartTimes[currentDef.id]) {
-                    stepStartTimes[currentDef.id] = Date.now();
+            const activeId = ExpedienteManager.getActiveId();
+            if (activeId) {
+                const data = ExpedienteManager.loadFlowState(activeId);
+                if (data) {
+                    currentStep = data.currentStep || 0;
+                    completedSteps = new Set(data.completedSteps || []);
+                    decisions = data.decisions || {};
+                    stepNotes = data.stepNotes || {};
+                    stepTimestamps = data.stepTimestamps || {};
+                    stepStartTimes = data.stepStartTimes || {};
+                    
+                    // Registrar inicio del paso actual si no existe
+                    const currentDef = flowDefinition[currentStep];
+                    if (currentDef && !stepStartTimes[currentDef.id]) {
+                        stepStartTimes[currentDef.id] = Date.now();
+                    }
+                    return;
                 }
             }
+            // Default
+            currentStep = 0;
+            completedSteps = new Set();
+            decisions = {};
+            stepNotes = {};
+            stepTimestamps = {};
+            stepStartTimes = {};
         }
 
         function saveData() {
-            const data = {
-                currentStep,
-                completedSteps: Array.from(completedSteps),
-                decisions,
-                stepNotes,
-                stepTimestamps,
-                stepStartTimes
-            };
-            localStorage.setItem('flujo_licitacion_mejorado_v1', JSON.stringify(data));
+            const activeId = ExpedienteManager.getActiveId();
+            if (activeId) {
+                const data = {
+                    currentStep,
+                    completedSteps: Array.from(completedSteps),
+                    decisions,
+                    stepNotes,
+                    stepTimestamps,
+                    stepStartTimes
+                };
+                ExpedienteManager.saveFlowState(activeId, data);
+            }
         }
 
         function replaceFlowDefinition(source, options = {}) {
@@ -1143,6 +1170,212 @@ const PLANTUML_SOURCE = plantumlSourceEl ? String(plantumlSourceEl.textContent |
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
+        function createEmptyExpedienteData() {
+            return {
+                expediente: '',
+                uuid: '',
+                fechaPublicacion: '',
+                fechaApertura: '',
+                organismo: '',
+                nif: '',
+                contacto: {
+                    telefono: '',
+                    email: '',
+                    direccion: ''
+                },
+                procedimiento: '',
+                procedureCode: '',
+                tramitacion: '',
+                nombreProyecto: '',
+                descripcion: '',
+                tipoContrato: '',
+                serieDocumental: '',
+                cpv: '',
+                presupuestoBase: 0,
+                presupuestoIVA: 0,
+                valorEstimado: 0,
+                plazoEjecucion: '',
+                plazoEjecucionDias: 0,
+                fechaLimitePresentacion: '',
+                garantiaDefinitiva: '',
+                criteriosTecnicos: [],
+                criteriosFinancieros: [],
+                requisitos: [],
+                subcontratacion: false,
+                financiacionUE: ''
+            };
+        }
+
+        function normalizeExpedienteData(rawData) {
+            const base = createEmptyExpedienteData();
+            if (!rawData || typeof rawData !== 'object') return base;
+
+            return {
+                ...base,
+                ...rawData,
+                contacto: {
+                    ...base.contacto,
+                    ...(rawData.contacto || {})
+                },
+                criteriosTecnicos: Array.isArray(rawData.criteriosTecnicos) ? rawData.criteriosTecnicos : [],
+                criteriosFinancieros: Array.isArray(rawData.criteriosFinancieros) ? rawData.criteriosFinancieros : [],
+                requisitos: Array.isArray(rawData.requisitos) ? rawData.requisitos : []
+            };
+        }
+
+        function queryTabsInCurrentWindow(queryInfo) {
+            if (!WEBEXT_API || !WEBEXT_API.tabs || !WEBEXT_API.windows) {
+                return Promise.resolve([]);
+            }
+
+            return WEBEXT_API.windows.getCurrent()
+                .then((currentWindow) => WEBEXT_API.tabs.query({ ...queryInfo, windowId: currentWindow.id }))
+                .catch((error) => {
+                    console.warn('No se pudo consultar la ventana actual para Gestiona:', error);
+                    return [];
+                });
+        }
+
+        function mergeExpedienteData(currentData, extractedData) {
+            const merged = normalizeExpedienteData(currentData);
+            Object.entries(extractedData || {}).forEach(([key, value]) => {
+                if (key === 'contacto' && value && typeof value === 'object') {
+                    merged.contacto = {
+                        ...merged.contacto,
+                        ...Object.fromEntries(Object.entries(value).filter(([, nestedValue]) => nestedValue !== '' && nestedValue != null))
+                    };
+                    return;
+                }
+
+                if (Array.isArray(value)) {
+                    if (value.length > 0) merged[key] = value.slice();
+                    return;
+                }
+
+                if (value !== '' && value != null) {
+                    merged[key] = value;
+                }
+            });
+            return merged;
+        }
+
+        function buildGestionaPromptMessage(data) {
+            const parts = [];
+            if (data.expediente) parts.push(`Expediente: ${data.expediente}`);
+            if (data.nombreProyecto) parts.push(`Asunto: ${data.nombreProyecto}`);
+            if (data.serieDocumental) parts.push(`Serie: ${data.serieDocumental}`);
+            if (data.fechaApertura) parts.push(`Apertura: ${data.fechaApertura}`);
+            parts.push('¿Quieres actualizar los datos del expediente con la información extraída de Gestiona?');
+            return parts.join('\n');
+        }
+
+        function normalizeExpedienteNumber(value) {
+            return String(value || '')
+                .replace(/\s+/g, '')
+                .trim()
+                .toUpperCase();
+        }
+
+        function requestTabExpedienteData(tabId) {
+            if (!WEBEXT_API || !WEBEXT_API.tabs || typeof tabId === 'undefined') {
+                return Promise.resolve(null);
+            }
+
+            return WEBEXT_API.tabs.executeScript(tabId, { file: 'gestiona-content.js' })
+                .catch(() => null)
+                .then(() => WEBEXT_API.tabs.sendMessage(tabId, { type: 'gestiona:extract-expediente' }))
+                .then((response) => (response && response.ok ? response.data : null))
+                .catch((error) => {
+                    console.warn('No se pudieron extraer datos desde la pestaña de Gestiona:', error);
+                    return null;
+                });
+        }
+
+        async function maybeNotifyGestionaOpenExpediente(force = false) {
+            const gestionaTabs = await queryTabsInCurrentWindow({ url: GESTIONA_URL_PATTERN });
+            if (!Array.isArray(gestionaTabs) || gestionaTabs.length === 0) {
+                lastGestionaPromptSignature = '';
+                return;
+            }
+
+            const tab = gestionaTabs.find((entry) => entry.active) || gestionaTabs[0];
+            const extracted = await requestTabExpedienteData(tab.id);
+            if (!extracted || typeof extracted !== 'object') {
+                if (force) showToast('ℹ️ Gestiona abierta, pero no se ha encontrado la ficha del expediente en la página');
+                return;
+            }
+
+            const normalized = normalizeExpedienteData(extracted);
+            const currentExpedienteNumber = normalizeExpedienteNumber(expedienteData && expedienteData.expediente);
+            const detectedExpedienteNumber = normalizeExpedienteNumber(normalized.expediente);
+            if (currentExpedienteNumber && detectedExpedienteNumber && currentExpedienteNumber === detectedExpedienteNumber) {
+                lastGestionaPromptSignature = '';
+                return;
+            }
+
+            const signature = `${tab.id || 'tab'}|${normalized.expediente}|${normalized.nombreProyecto}|${normalized.fechaApertura}|${normalized.serieDocumental}`;
+            if (!force && signature === lastGestionaPromptSignature) {
+                return;
+            }
+
+            lastGestionaPromptSignature = signature;
+
+            const updateCurrent = confirm(`Datos extraídos de Gestiona:\n${buildGestionaPromptMessage(normalized)}\n\n¿Actualizar el expediente actual?`);
+            if (updateCurrent) {
+                expedienteData = mergeExpedienteData(expedienteData, normalized);
+                expedienteData.__gestionaTabId = tab.id || null;
+                expedienteData.__gestionaDetectedAt = Date.now();
+                saveExpedienteData();
+                displayExpedienteInfo();
+                renderFlow();
+                showToast('✅ Datos del expediente actualizados desde Gestiona');
+            } else {
+                const createNew = confirm('¿Crear un nuevo expediente con estos datos?');
+                if (createNew) {
+                    const nombre = normalized.nombreProyecto || `Expediente ${normalized.expediente}`;
+                    const ref = normalized.expediente || '';
+                    const newId = ExpedienteManager.createExpediente(nombre, ref);
+                    ExpedienteManager.saveFlowState(newId, { currentStep: 0, completedSteps: [], decisions: {}, stepNotes: {}, stepTimestamps: {}, stepStartTimes: {} });
+                    ExpedienteManager.saveXMLData(newId, normalized);
+                    ExpedienteManager.setActiveId(newId);
+                    // Reload state
+                    loadExpedienteData();
+                    loadData();
+                    renderFlow();
+                    showToast('✅ Nuevo expediente creado con datos de Gestiona');
+                }
+            }
+        }
+
+        function registerGestionaTabWatcher() {
+            if (gestionaWatcherBound || !WEBEXT_API || !WEBEXT_API.tabs) return;
+
+            const refreshNotice = () => {
+                maybeNotifyGestionaOpenExpediente().catch((error) => {
+                    console.warn('No se pudo actualizar el aviso de Gestiona:', error);
+                });
+            };
+
+            if (WEBEXT_API.tabs.onActivated) {
+                WEBEXT_API.tabs.onActivated.addListener(refreshNotice);
+            }
+            if (WEBEXT_API.tabs.onUpdated) {
+                WEBEXT_API.tabs.onUpdated.addListener((_tabId, changeInfo) => {
+                    if (changeInfo && (changeInfo.url || changeInfo.status === 'complete')) {
+                        refreshNotice();
+                    }
+                });
+            }
+            if (WEBEXT_API.tabs.onRemoved) {
+                WEBEXT_API.tabs.onRemoved.addListener(refreshNotice);
+            }
+            if (WEBEXT_API.windows && WEBEXT_API.windows.onFocusChanged) {
+                WEBEXT_API.windows.onFocusChanged.addListener(refreshNotice);
+            }
+
+            gestionaWatcherBound = true;
+        }
+
         function toggleTimeline() {
             const content = document.getElementById('timelineContent');
             const toggleText = document.getElementById('timelineToggleText');
@@ -1179,6 +1412,7 @@ const PLANTUML_SOURCE = plantumlSourceEl ? String(plantumlSourceEl.textContent |
                     expedienteData.__xmlLoadedAt = Date.now();
                     saveExpedienteData();
                     displayExpedienteInfo();
+                    maybeNotifyGestionaOpenExpediente(true);
                     showToast('✅ Expediente cargado correctamente');
                     
                 } catch (error) {
@@ -1221,54 +1455,15 @@ const PLANTUML_SOURCE = plantumlSourceEl ? String(plantumlSourceEl.textContent |
             const cbcNS = 'urn:dgpe:names:draft:codice:schema:xsd:CommonBasicComponents-2';
             const cacNS = 'urn:dgpe:names:draft:codice:schema:xsd:CommonAggregateComponents-2';
 
-            const data = {
-                // Datos básicos
-                expediente: getXMLValue(xmlDoc, 'ContractFolderID', cbcNS),
-                uuid: getXMLValue(xmlDoc, 'UUID', cbcNS),
-                fechaPublicacion: getXMLValue(xmlDoc, 'IssueDate', cbcNS),
-                
-                // Í“rgano de contratación
-                organismo: getXMLValue(xmlDoc, 'Name', cbcNS),
-                nif: '',
-                contacto: {
-                    telefono: '',
-                    email: '',
-                    direccion: ''
-                },
-                
-                // Procedimiento
-                procedimiento: getXMLAttribute(xmlDoc, 'ProcedureCode', 'name'),
-                procedureCode: getXMLValue(xmlDoc, 'ProcedureCode', cbcNS),
-                tramitacion: getXMLAttribute(xmlDoc, 'UrgencyCode', 'name'),
-                
-                // Proyecto
-                nombreProyecto: '',
-                descripcion: '',
-                tipoContrato: getXMLAttribute(xmlDoc, 'TypeCode', 'name'),
-                cpv: '',
-                
-                // Importes
-                presupuestoBase: 0,
-                presupuestoIVA: 0,
-                valorEstimado: 0,
-                
-                // Plazos
-                plazoEjecucion: '',
-                plazoEjecucionDias: 0,
-                fechaLimitePresentacion: '',
-                
-                // Garantías
-                garantiaDefinitiva: '',
-                
-                // Criterios
-                criteriosTecnicos: [],
-                criteriosFinancieros: [],
-                requisitos: [],
-                
-                // Otros
-                subcontratacion: false,
-                financiacionUE: ''
-            };
+            const data = createEmptyExpedienteData();
+            data.expediente = getXMLValue(xmlDoc, 'ContractFolderID', cbcNS);
+            data.uuid = getXMLValue(xmlDoc, 'UUID', cbcNS);
+            data.fechaPublicacion = getXMLValue(xmlDoc, 'IssueDate', cbcNS);
+            data.organismo = getXMLValue(xmlDoc, 'Name', cbcNS);
+            data.procedimiento = getXMLAttribute(xmlDoc, 'ProcedureCode', 'name');
+            data.procedureCode = getXMLValue(xmlDoc, 'ProcedureCode', cbcNS);
+            data.tramitacion = getXMLAttribute(xmlDoc, 'UrgencyCode', 'name');
+            data.tipoContrato = getXMLAttribute(xmlDoc, 'TypeCode', 'name');
 
             // Extraer datos más específicos
             try {
@@ -1401,10 +1596,12 @@ const PLANTUML_SOURCE = plantumlSourceEl ? String(plantumlSourceEl.textContent |
             // Campos principales
             const mainFields = [
                 { label: 'Expediente', value: expedienteData.expediente },
+                { label: 'F. Apertura', value: expedienteData.fechaApertura },
                 { label: 'Organismo', value: expedienteData.organismo },
                 { label: 'NIF', value: expedienteData.nif },
                 { label: 'Procedimiento', value: expedienteData.procedimiento },
                 { label: 'Tipo de Contrato', value: expedienteData.tipoContrato },
+                { label: 'Serie documental', value: expedienteData.serieDocumental },
                 { label: 'Tramitación', value: expedienteData.tramitacion },
                 { label: 'Presupuesto Base', value: formatCurrency(expedienteData.presupuestoBase) },
                 { label: 'Presupuesto con IVA', value: formatCurrency(expedienteData.presupuestoIVA) },
@@ -1479,21 +1676,26 @@ const PLANTUML_SOURCE = plantumlSourceEl ? String(plantumlSourceEl.textContent |
         }
 
         function saveExpedienteData() {
-            if (expedienteData) {
-                localStorage.setItem('expediente_data', JSON.stringify(expedienteData));
+            const activeId = ExpedienteManager.getActiveId();
+            if (activeId && expedienteData) {
+                ExpedienteManager.saveXMLData(activeId, expedienteData);
             }
         }
 
         function loadExpedienteData() {
-            const saved = localStorage.getItem('expediente_data');
-            if (saved) {
-                expedienteData = JSON.parse(saved);
-                displayExpedienteInfo();
-                return;
+            const activeId = ExpedienteManager.getActiveId();
+            if (activeId) {
+                expedienteData = ExpedienteManager.loadXMLData(activeId);
+                if (expedienteData) {
+                    displayExpedienteInfo();
+                    maybeNotifyGestionaOpenExpediente(true);
+                    return;
+                }
             }
 
             // Si el expediente activo no tiene XML asociado, limpiar estado/UI.
             expedienteData = null;
+            lastGestionaPromptSignature = '';
             const infoContainer = document.getElementById('expedienteInfo');
             if (infoContainer) infoContainer.classList.remove('active');
             const gridContainer = document.getElementById('expedienteGrid');
@@ -1506,8 +1708,11 @@ const PLANTUML_SOURCE = plantumlSourceEl ? String(plantumlSourceEl.textContent |
 
         function clearExpediente() {
             if (confirm('¿Seguro que quieres eliminar los datos del expediente?')) {
+                const activeId = ExpedienteManager.getActiveId();
+                if (activeId) {
+                    ExpedienteManager.clearXMLData(activeId);
+                }
                 expedienteData = null;
-                localStorage.removeItem('expediente_data');
                 
                 // Limpiar la interfaz
                 const infoContainer = document.getElementById('expedienteInfo');
@@ -1944,6 +2149,8 @@ const PLANTUML_SOURCE = plantumlSourceEl ? String(plantumlSourceEl.textContent |
         // Inicializar
         loadData();
         loadExpedienteData(); // Cargar datos del expediente si existen
+        registerGestionaTabWatcher();
+        maybeNotifyGestionaOpenExpediente();
         
         // Registrar inicio del paso actual si no existe
         const currentDef = flowDefinition[currentStep];

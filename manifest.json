@@ -18,6 +18,21 @@
     "48": "icons/icon-48.png",
     "96": "icons/icon-96.png"
   },
+  "permissions": [
+    "tabs",
+    "https://gestiona-08.espublico.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://gestiona-08.espublico.com/*"
+      ],
+      "js": [
+        "gestiona-content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
   "sidebar_action": {
     "default_title": "Seguimiento Licitación",
     "default_icon": {
