@@ -20,10 +20,15 @@ repeat while (¿Hay que rectificar la documentación?) is (Si)
    
 |Contratación|
 :Enviar a la firma;
-
+If (¿es de urbanismo) Then (Si)
 |Concejal del servicio|
-:Firma ficha e informe;
-
+:firma la ficha y el informe de necesidad;
+else (No)
+|Técnico|
+:Firma informe de necesidad;
+|Concejal del servicio|
+:Firma ficha;
+endif
 |Contratación|
 :Solicitar RC;
 |Intervención|
@@ -37,6 +42,13 @@ else (No)
 :Avisar al concejal;
 endif
 |Contratación|
+:Redactar providencia inicio;
+:Enviar firma (concejal del servicio y alcalde);
+|Concejal del servicio|
+:Firma;
+|Alcalde|
+:Firma;
+|Contratación|
 :preparar informe Secretario;
 :Enviar a la firma Secretario;
 |Secretario|
@@ -44,7 +56,7 @@ endif
 |Contratación|
 :Preparar invitaciones;
 :adjuntar Memoria técnica, modelo de declaración responsable y modelo de oferta econonómica;
-
+:Enviar al registro de salida;
 :Enviar a la firma (secretario valida y concejal de contratación firma);
 |Secretario|
 :Valida;
@@ -52,8 +64,9 @@ endif
 :firma;
 |Contratación|
 #e0e0e0:⏳ Esperar plazo de ofertas;
+:Abrir sobres;
+:Comprobar que son correctos;
 :incluir ofertas en expediente;
-:Comprobar ofertas;
 :Preparar propuesta de adjudicación sin fiscalización;
 :Enviar a la firma (Secretario y Concejal de contratación);
 |Secretario|
