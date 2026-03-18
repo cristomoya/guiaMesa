@@ -1265,7 +1265,6 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
             if (data.nombreProyecto) parts.push(`Asunto: ${data.nombreProyecto}`);
             if (data.serieDocumental) parts.push(`Serie: ${data.serieDocumental}`);
             if (data.fechaApertura) parts.push(`Apertura: ${data.fechaApertura}`);
-            parts.push('¿Quieres actualizar los datos del expediente con la información extraída de Gestiona?');
             return parts.join('\n');
         }
 
@@ -1320,30 +1319,19 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
 
             lastGestionaPromptSignature = signature;
 
-            const updateCurrent = confirm(`Datos extraídos de Gestiona:\n${buildGestionaPromptMessage(normalized)}\n\n¿Actualizar el expediente actual?`);
-            if (updateCurrent) {
-                expedienteData = mergeExpedienteData(expedienteData, normalized);
-                expedienteData.__gestionaTabId = tab.id || null;
-                expedienteData.__gestionaDetectedAt = Date.now();
-                saveExpedienteData();
-                displayExpedienteInfo();
+            const createNew = confirm(`Datos extraídos de Gestiona:\n${buildGestionaPromptMessage(normalized)}\n\n¿Crear un nuevo expediente con estos datos?`);
+            if (createNew) {
+                const nombre = normalized.nombreProyecto || `Expediente ${normalized.expediente}`;
+                const ref = normalized.expediente || '';
+                const newId = ExpedienteManager.createExpediente(nombre, ref);
+                ExpedienteManager.saveFlowState(newId, { currentStep: 0, completedSteps: [], decisions: {}, stepNotes: {}, stepTimestamps: {}, stepStartTimes: {} });
+                ExpedienteManager.saveXMLData(newId, normalized);
+                ExpedienteManager.setActiveId(newId);
+                // Reload state
+                loadExpedienteData();
+                loadData();
                 renderFlow();
-                showToast('✅ Datos del expediente actualizados desde Gestiona');
-            } else {
-                const createNew = confirm('¿Crear un nuevo expediente con estos datos?');
-                if (createNew) {
-                    const nombre = normalized.nombreProyecto || `Expediente ${normalized.expediente}`;
-                    const ref = normalized.expediente || '';
-                    const newId = ExpedienteManager.createExpediente(nombre, ref);
-                    ExpedienteManager.saveFlowState(newId, { currentStep: 0, completedSteps: [], decisions: {}, stepNotes: {}, stepTimestamps: {}, stepStartTimes: {} });
-                    ExpedienteManager.saveXMLData(newId, normalized);
-                    ExpedienteManager.setActiveId(newId);
-                    // Reload state
-                    loadExpedienteData();
-                    loadData();
-                    renderFlow();
-                    showToast('✅ Nuevo expediente creado con datos de Gestiona');
-                }
+                showToast('✅ Nuevo expediente creado con datos de Gestiona');
             }
         }
 
