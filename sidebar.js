@@ -70,6 +70,30 @@ async function loadExternalPlantUmlSource() {
     showToast('⚠️ No se pudo cargar el archivo .puml indicado en data-src');
 }
 
+function hasCustomDiagramForActiveExpediente() {
+    try {
+        if (!window.DiagramManager || typeof window.DiagramManager.getActiveDiagram !== 'function') return false;
+        const expId = (typeof ExpedienteManager !== 'undefined' && typeof ExpedienteManager.getActiveId === 'function')
+            ? (ExpedienteManager.getActiveId() || 'default')
+            : 'default';
+        const active = window.DiagramManager.getActiveDiagram(expId);
+        return Boolean(active && active.source);
+    } catch (_e) {
+        return false;
+    }
+}
+
+function startExternalPlantUmlAutoRefresh() {
+    if (!plantumlSourceEl) return;
+    const candidates = getExternalPlantUmlCandidates();
+    if (candidates.length === 0) return;
+
+    setInterval(() => {
+        if (hasCustomDiagramForActiveExpediente()) return;
+        loadExternalPlantUmlSource();
+    }, 1500);
+}
+
 const PLANTUML_SOURCE = plantumlSourceEl ? String(plantumlSourceEl.textContent || '').trim() : '';
         const PLACSP_DOC_URL = encodeURI('guia.html');
         const PLACSP_ASSETS_DIR = 'images';
@@ -1935,6 +1959,7 @@ const PLANTUML_SOURCE = plantumlSourceEl ? String(plantumlSourceEl.textContent |
         setTimeout(() => {
             loadExternalPlantUmlSource();
         }, 0);
+        startExternalPlantUmlAutoRefresh();
         
         // Auto-avanzar pasos del Sistema si estamos en uno al cargar
         setTimeout(() => {

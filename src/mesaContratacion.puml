@@ -85,8 +85,7 @@ if (¿Documentos subsanables marcados?) then (Sí)
     #052b02:Activar Proceso de Subsanación;
 
     |OA|
-    #A7D3F2:Ir a pestaña "Comunicaciones"
-    img:Image_143.png bookmark:bookmark69;
+    #A7D3F2:Ir a pestaña "Comunicaciones" bookmark:bookmark69;
     #E34220:Seleccionar licitadores y rellenar "Texto del Acuerdo";
     #E34220:Pulsar "Configurar comunicación"
     img:Image_145.png;
@@ -106,7 +105,7 @@ if (¿Documentos subsanables marcados?) then (Sí)
     |OA|
     #FFD8A8:FASE 2: SUBSANACIÓN;
     #FFD8A8:Acceder al acto "Subsanación"
-    img:Image_043.png bookmark:bookmark37;
+    img:https://web.cristobalmoyalopez.es/guiasPlatforma/celebracionSesiones/img/Image_213.png bookmark:bookmark37;
     #FFD8A8:Convocar sesión para la apertura de la documentación subsanada;
     #FFD8A8:Iniciar sesión para subsanar la documentación;
     #A7D3F2:Iniciar Acto de Subsanación

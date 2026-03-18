@@ -11,11 +11,12 @@ skinparam ArrowFontSize 10
 |Órgano de Contratación|
 start
 :Acceder a la Plataforma de Contratación del Sector Público;
-if ("¿Existe el expediente") then (Si)
+if ("¿Existe el expediente?") then (Si)
 :Seguir;
 else (No)
-:Crear nueva licitación en el sistema;
+:Crear nueva licitación en el sistema bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/publicacionAnuncio/Index/part7.htm img:https://web.cristobalmoyalopez.es/guiasPlatforma/publicacionAnuncio/Index/Image_016.png;
 :Introducir número de expediente único;
+:Seleccionar el CPV bookmark:https://web.cristobalmoyalopez.es/guiasPlatforma/publicacionAnuncio/Index/part8.htm img:https://web.cristobalmoyalopez.es/guiasPlatforma/publicacionAnuncio/Index/Image_021.png ;
 endif
 if ("El contrato está sujero a regulación armonizada") Then (Si)
 :Indicar si el contrato está sujeto a regulación armonizada SARA/Umbral;

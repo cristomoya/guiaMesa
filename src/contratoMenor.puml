@@ -1,0 +1,41 @@
+@startuml Contrato Menor 
+|Servicio|
+start
+
+repeat
+|Contratación|
+  :abrir expediente bookmark:https://gestiona-08.espublico.com;
+  :Ficha de contratación bookmark:https://wekan.cristobalmoyalopez.es/b/44DcK8YTRA9gnX73A/contratos-menores;
+  :Informe de necesidad;
+|Técnico|
+:Redactar prescripciones técnicas/proyecto obras;
+  |Contratación|
+  :Repasar y comprobar que es correcto;
+  backward:Avisar al servicio para que rectifique el error;
+repeat while (¿Es correcto?) is (No) 
+   
+
+
+
+
+|Contratación|
+:Enviar a la firma;
+
+|Concejal del servicio|
+:Firma ficha e informe;
+|Tecnico|
+:Firma prescripciones técnicas;
+|Contratación|
+:Solicitar RC;
+|Intervención|
+:Emite RC;
+if(¿Existe crédito) then (Si)
+|Contratación|
+:Redactar la providencia de inicio:
+:Enviar a la firma del concejal del servicio;
+else (No)
+|Contratación|
+:Avisar al concejal;
+:Esperar;
+stop
+@enduml
