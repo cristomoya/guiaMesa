@@ -472,7 +472,7 @@
         if (typeof loadData === 'function') loadData();
         if (typeof loadExpedienteData === 'function') loadExpedienteData();
         if (typeof renderFlow === 'function') renderFlow();
-        if (typeof focusCurrentStepCard === 'function') requestAnimationFrame(() => focusCurrentStepCard(false));
+        if (typeof focusCurrentStepCard === 'function') focusCurrentStepCard(false);
     }
 
     function guardarPuntoControl() {

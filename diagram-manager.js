@@ -116,7 +116,7 @@
                         newDef.forEach(s => window.flowDefinition.push(s));
                         if (typeof renderFlow === 'function') renderFlow();
                         if (typeof focusCurrentStepCard === 'function') {
-                            requestAnimationFrame(() => focusCurrentStepCard(false));
+                            focusCurrentStepCard(false);
                         }
                         applied = true;
                     }

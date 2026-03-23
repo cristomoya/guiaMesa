@@ -509,7 +509,7 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
 
             saveData();
             renderFlow();
-            requestAnimationFrame(() => focusCurrentStepCard(false));
+            focusCurrentStepCard(true);
             autoAdvanceSystemSteps();
             return true;
         }
@@ -589,7 +589,7 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
 
             saveData();
             renderFlow();
-            requestAnimationFrame(() => focusCurrentStepCard(true));
+            focusCurrentStepCard(true);
             autoAdvanceSystemSteps();
             showToast('✅ Paso activo actualizado');
         }
@@ -986,7 +986,7 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
                     
                     saveData();
                     renderFlow();
-                    requestAnimationFrame(() => focusCurrentStepCard(true));
+                    focusCurrentStepCard(true);
                     autoAdvanceSystemSteps();
                     return;
                 }
@@ -1012,7 +1012,7 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
             
             saveData();
             renderFlow();
-            requestAnimationFrame(() => focusCurrentStepCard(true));
+            focusCurrentStepCard(true);
             
             // Auto-avanzar si el siguiente paso es del Sistema
             autoAdvanceSystemSteps();
@@ -1053,7 +1053,7 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
                             
                             saveData();
                             renderFlow();
-                            requestAnimationFrame(() => focusCurrentStepCard(true));
+                            focusCurrentStepCard(true);
                             // Recursivamente auto-avanzar si el siguiente también es del Sistema
                             autoAdvanceSystemSteps();
                         } else {
@@ -1095,7 +1095,7 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
             currentStep = prevStep;
             saveData();
             renderFlow();
-            requestAnimationFrame(() => focusCurrentStepCard(true));
+            focusCurrentStepCard(true);
         }
 
         function resetLoopSegmentState(startIndex, endIndex) {
@@ -1129,7 +1129,7 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
                 
                 saveData();
                 renderFlow();
-                requestAnimationFrame(() => focusCurrentStepCard(true));
+                focusCurrentStepCard(true);
                 showToast('🔄 Proceso reiniciado');
             }
         }
@@ -1150,7 +1150,7 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
                 stepNotes[currentNodeId] = document.getElementById('notasTextarea').value;
                 saveData();
                 renderFlow();
-                requestAnimationFrame(() => focusCurrentStepCard(false));
+                focusCurrentStepCard(false);
                 cerrarModal();
                 showToast('✅ Notas guardadas correctamente');
             }
@@ -1342,6 +1342,7 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
                 maybeNotifyGestionaOpenExpediente().catch((error) => {
                     console.warn('No se pudo actualizar el aviso de Gestiona:', error);
                 });
+                requestAnimationFrame(() => focusCurrentStepCard(false));
             };
 
             if (WEBEXT_API.tabs.onActivated) {
@@ -2148,7 +2149,7 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
         }
         
         renderFlow();
-        requestAnimationFrame(() => focusCurrentStepCard(false));
+        focusCurrentStepCard(false);
 
         // Cargar diagrama externo (si data-src está definido) y aplicarlo en caliente.
         setTimeout(() => {
