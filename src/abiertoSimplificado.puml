@@ -1,0 +1,475 @@
+@startuml
+scale 1500 width
+skinparam swimlaneWidth 300
+
+|#8ce7e0ff|OA|
+|#d3e6d2|Sistema|
+|#FFF9C4|Licitador|
+
+start
+|OA|
+if(¿dos sobres?) then (Si)
+
+|OA|
+#FFD8A8:FASE 1: Acceder al acto Apertura oferta criterios juicio de valor;
+
+:Pulsar "Comenzar";
+
+|Sistema|
+#d3e6d2:Habilitar acciones específicas del acto;
+
+|OA|
+#A7D3F2:Revisar lista de ofertas y advertencias;
+
+note right
+  Comprobar licitadores inscritos en ROLECE
+  (obligatorio en PAS — art. 159.4.a)
+end note
+
+if (¿Oferta retirada / a incluir?) then (Sí)
+    #FFD8A8:Gestionar ofertas retiradas o a incluir;
+endif
+
+if (¿Sobres configurados como cifrados?) then (Sí)
+    #E34220:Seleccionar y pulsar "Descifrar";
+    note right
+      El sistema pedirá las claves de descifrado
+    end note
+else (No)
+    #A7D3F2:Continuar sin descifrado;
+endif
+
+#E34220:Seleccionar y pulsar "Abrir" sobres;
+
+|Sistema|
+#052b02:Cambiar estado de la documentación a "Disponible";
+
+|OA|
+#A7D3F2:Navegar al detalle del licitador;
+#A7D3F2:Revisar pestaña "Validaciones";
+
+if (¿Firmas correctas e integridad OK?) then (Sí)
+    #A7D3F2:Continuar;
+else (No)
+    #FFB3B3:Registrar "No cumple" (firma incorrecta);
+
+    |Sistema|
+    #d3e6d2:Documento marcado como "Firma subsanable";
+
+    |OA|
+endif
+
+note right
+  En el PAS la declaración responsable
+  debe incluir: representación, solvencia,
+  autorizaciones, no prohibición de contratar
+  y compromiso art. 75.2 (art. 159.4.c)
+end note
+
+repeat
+    #A7D3F2:Acceder al detalle del requisito de participación;
+
+    note right
+      En PAS NO se exige solvencia
+      económica ni técnica (art. 159.6.b)
+      Solo se califica la declaración responsable
+    end note
+
+    if (¿Requisito subsanable?) then (Sí)
+        #FFD8A8:Seleccionar calificación "Subsanable";
+        #FFB3B3:Introducir justificación OBLIGATORIA;
+    else (No)
+        #E34220:Seleccionar "Cumple" / "No subsanable" / "No calificado";
+    endif
+
+    #A7D3F2:Pulsar "Guardar" requisito;
+repeat while (¿Quedan requisitos?) is (Sí)
+-> No;
+
+|Sistema|
+#052b02:Actualizar estado de calificaciones parciales;
+
+|OA|
+#E34220:Pulsar "Calcular";
+#A7D3F2:Registrar estado global (Admitido provisional / Excluido);
+#A7D3F2:Guardar;
+
+|Sistema|
+if (¿Documentos subsanables marcados?) then (Sí)
+    #052b02:Activar proceso de subsanación;
+
+    |OA|
+    #A7D3F2:Ir a pestaña "Comunicaciones";
+    #E34220:Seleccionar licitadores y rellenar "Texto del acuerdo";
+    #E34220:Pulsar "Configurar comunicación";
+    #E34220:Enviar comunicación de Admisión/Exclusión con plazo;
+
+    note right
+      El sobre de subsanación se crea
+      automáticamente por el sistema
+    end note
+
+    |Sistema|
+    #052b02:Publicar requerimiento de subsanación con plazo;
+
+    |Licitador|
+    #033b14:Recibir notificación y acceder al acto;
+    #FFF3B0:Preparar y cargar documentación requerida;
+
+    |OA|
+    #e0e0e0:⏳ Esperar plazo de subsanación;
+
+    #FFD8A8:FASE 2: SUBSANACIÓN
+    Acceder al acto "Subsanación";
+    #FFD8A8:Convocar sesión para apertura de documentación subsanada;
+    #FFD8A8:Iniciar sesión;
+    #A7D3F2:Iniciar acto de subsanación;
+
+    if (¿Sobres cifrados?) then (Sí)
+        #A7D3F2:Descifrar sobre;
+    endif
+
+    #A7D3F2:Abrir sobre;
+    #A7D3F2:Acceder al detalle de las ofertas subsanadas;
+
+    note right
+      Seleccionar sobre tipo
+      "Documentación administrativa y
+      criterios cuantificables automáticamente"
+    end note
+
+    if (¿Subsanación presentada a tiempo?) then (Sí)
+        if (¿Documentación cumple y subsana?) then (Sí)
+            #E34220:Registrar estado "Admitido";
+        else (No)
+            #FFB3B3:Registrar estado "Excluido" por subsanación insuficiente;
+            #E34220:Generar comunicación de exclusión;
+        endif
+    else (No)
+        #FFB3B3:Registrar estado "Excluido" por falta de subsanación;
+        #E34220:Generar comunicación de exclusión;
+    endif
+
+    #A7D3F2:Guardar calificación final;
+    #E5D4FF:Cerrar acto de subsanación;
+
+    |Sistema|
+    #052b02:Finalizar proceso de subsanación;
+else (No)
+endif
+
+|OA|
+#A7D3F2:Generar informes (opcional);
+#A7D3F2:Gestionar documentación del acto (opcional);
+:Descargar documentación;
+#E5D4FF:Pulsar "Finalizar" acto de apertura administrativa;
+
+If (¿Se valoran los criterios por un técnico?) then (Si)
+ #e0e0e0:⏳ Esperar informe de valoración;
+Else (No)
+Endif
+    #FFD8A8:FASE 4A: VALORACIÓN DE CRITERIOS DE JUICIO DE VALOR
+    Acto "Valoración oferta criterios juicio de valor (art. 159)";
+
+    note right
+      Valoración por servicios técnicos
+      del órgano de contratación.
+      Plazo máximo: 7 días.
+      Debe suscribirla el técnico/s valoradores.
+      (art. 159.4.e)
+    end note
+
+    #E34220:Pulsar "Comenzar";
+
+    |Sistema|
+    #052b02:Acto iniciado;
+
+    |OA|
+    #A7D3F2:Visualizar listado de ofertas admitidas;
+
+    if (¿Valoración manual?) then (Sí)
+        repeat
+            #A7D3F2:Acceder al detalle del licitador;
+            #A7D3F2:Ir a pestaña "Contenido criterios";
+            #E34220:Seleccionar criterio de juicio de valor;
+            #A7D3F2:Introducir puntuación;
+            #A7D3F2:Introducir motivo (opcional);
+
+            if (¿Exclusión necesaria?) then (Sí)
+                #FFD8A8:Modificar estado a "Excluido";
+            endif
+
+            #A7D3F2:Guardar y volver;
+        repeat while (¿Quedan licitadores o criterios?) is (Sí)
+        -> No;
+    else (No: carga automática)
+        #A7D3F2:Completar Excel de valoraciones;
+        #E34220:Pulsar "Incorporar valoraciones";
+
+        |Sistema|
+        #052b02:Cargar puntuaciones automáticamente;
+
+        |OA|
+    endif
+
+    #A7D3F2:Generar informe de valoraciones (opcional);
+    #E5D4FF:Pulsar "Finalizar";
+
+    |Sistema|
+    #052b02:Actualizar estados y cerrar acto de valoración de juicio de valor;
+
+    |OA|
+    note right
+      La valoración debe estar efectuada
+      ANTES del acto público de apertura
+      del sobre económico (art. 159.4.f)
+    end note
+
+else (No)
+endif
+''--------------------------Apertura sobre económico (criterios automáticos)--------------------------
+
+|OA|
+#FFD8A8:FASE 3B: APERTURA DE SOBRE DE CRITERIOS CUANTIFICABLES AUTOMÁTICAMENTE
+Acto "Apertura oferta criterios cuantificables automáticamente (art. 159)";
+
+note right
+  Acto PÚBLICO obligatorio.
+  En sesión de mesa de contratación.
+  Si hay 2 sobres: se lee el resultado
+  de juicio de valor en este mismo acto
+  antes de abrir el económico (art. 159.4.f)
+end note
+
+#A7D3F2:Acceder al acto de apertura de criterios cuantificables;
+
+if (¿Hay 2 sobres?) then (Sí)
+    #A7D3F2:Leer en voz alta el resultado de la valoración de criterios de juicio de valor;
+endif
+
+if (¿Sobres configurados como cifrados?) then (Sí)
+    #A7D3F2:Pulsar "Descifrar";
+    note right
+      Mediante contraseña o certificado
+      según custodia de claves.
+      Documentación pasa a "Descifrada"
+    end note
+endif
+
+#A7D3F2:Seleccionar ofertas admitidas susceptibles de ser abiertas;
+#E34220:Pulsar "Abrir";
+
+|Sistema|
+#052b02:Estado documentación cambia a "Disponible";
+
+|OA|
+#A7D3F2:Acceder a la documentación y consultar contenido (oferta económica);
+#A7D3F2:Imprimir lista de licitadores (opcional);
+#A7D3F2:Descargar lista de valoración (opcional);
+#A7D3F2:Descargar documentación masiva (opcional);
+#A7D3F2:Gestionar ofertas retiradas (opcional);
+#FFF3B0:Enviar "Otras comunicaciones" — Justificación de Oferta Anormalmente Baja (opcional);
+#A7D3F2:Finalizar acto de apertura económica;
+
+''--------------------------Oferta anormalmente baja--------------------------
+
+if (¿Hay criterios para considerar una oferta anormalmente baja?) then (Sí)
+    #A7D3F2:Calcular si las ofertas están en situación de baja temeraria (art. 149 LCSP);
+
+    if (¿Hay ofertas anormalmente bajas?) then (Sí)
+        #A7D3F2:Acceder a comunicaciones;
+        #A7D3F2:Crear "Otras comunicaciones" — marcar que requiere respuesta del licitador;
+        #A7D3F2:Configurar comunicación JAB;
+        #A7D3F2:Enviar comunicación JAB;
+
+        note right
+          Plazo máximo para que el licitador
+          justifique: 5 días hábiles
+          desde el envío (art. 159.4.f)
+        end note
+
+        |Licitador|
+        #FFF3B0:Recibir comunicación JAB;
+        #FFF3B0:Enviar documentación justificativa;
+
+        |OA|
+        #e0e0e0:⏳ Esperar plazo de justificación JAB;
+
+        #FFD8A8:FASE JAB: APERTURA Y VALORACIÓN DE JUSTIFICACIÓN DE OFERTA ANORMALMENTE BAJA;
+        #A7D3F2:Acceder al acto "Justificación de oferta anormalmente baja";
+        #E34220:Pulsar "Comenzar";
+        #A7D3F2:Apertura del sobre de justificación;
+        #A7D3F2:Consultar documentación aportada por el licitador;
+        #A7D3F2:Solicitar informe técnico sobre la justificación (si procede);
+        #e0e0e0:⏳ Esperar informe (si se ha solicitado);
+        #E5D4FF:Finalizar acto de justificación JAB;
+
+        if (¿Justificación aceptada?) then (Sí)
+            #A7D3F2:Mantener oferta — continuar valoración;
+        else (No)
+            #FFB3B3:Excluir oferta por baja temeraria no justificada;
+        endif
+    else (No)
+        #A7D3F2:Continuar al siguiente trámite;
+    endif
+else (No)
+endif
+
+''--------------------------Valoración de criterios cuantificables--------------------------
+
+|OA|
+#FFD8A8:FASE 4B: VALORACIÓN DE CRITERIOS CUANTIFICABLES AUTOMÁTICAMENTE
+Acto "Valoración oferta criterios cuantificables automáticamente (art. 159)";
+
+#E34220:Pulsar "Comenzar";
+
+|Sistema|
+#052b02:Acto iniciado;
+
+|OA|
+#A7D3F2:Visualizar listado de ofertas admitidas;
+
+if (¿Valoración manual?) then (Sí)
+    repeat
+        #A7D3F2:Acceder al detalle del licitador;
+        #A7D3F2:Ir a pestaña "Contenido criterios";
+        #E34220:Seleccionar criterio cuantificable;
+        #A7D3F2:Introducir puntuación normalizada;
+        #A7D3F2:Introducir motivo (opcional);
+
+        if (¿Exclusión necesaria?) then (Sí)
+            #FFD8A8:Modificar estado a "Excluido";
+        endif
+
+        #A7D3F2:Guardar y volver;
+    repeat while (¿Quedan licitadores o criterios?) is (Sí)
+    -> No;
+else (No: carga automática)
+    #A7D3F2:Completar Excel de valoraciones;
+    #E34220:Pulsar "Incorporar valoraciones";
+
+    |Sistema|
+    #052b02:Cargar puntuaciones automáticamente;
+
+    |OA|
+endif
+
+#A7D3F2:Generar informe de valoraciones (opcional);
+#A7D3F2:Publicar documentación (opcional);
+#E5D4FF:Pulsar "Finalizar";
+
+|Sistema|
+#052b02:Actualizar estados y cerrar acto de valoración;
+
+''--------------------------Propuesta de adjudicación--------------------------
+
+|OA|
+#FFD8A8:FASE 5: PROPUESTA DE ADJUDICACIÓN
+Acto "Propuesta de adjudicación";
+
+note right
+  En el PAS la mesa puede realizar
+  la propuesta en la misma sesión
+  tras la valoración (art. 159.4.f.2º)
+end note
+
+#A7D3F2:Iniciar acto de propuesta de adjudicación;
+#A7D3F2:Comprobar en ROLECE: constitución, poderes, solvencia, prohibiciones
+(art. 159.4.f.3º);
+
+if (¿Quedan licitadores válidos?) then (Sí)
+    #A7D3F2:Proponer adjudicatario (mejor puntuación);
+else (No)
+    #FFD8A8:Proponer resultado desierto;
+endif
+
+#E34220:Pulsar "Proponer adjudicación y avisar al órgano responsable";
+#E34220:Marcar "Enviar informe al órgano de contratación" (opcional);
+#A7D3F2:Generar informe de propuesta de adjudicación (opcional);
+#E5D4FF:Finalizar acto de propuesta de adjudicación;
+
+|Sistema|
+#052b02:Notificar al Órgano de Contratación la propuesta e informe;
+
+''--------------------------Requerimiento al mejor valorado--------------------------
+
+|OA|
+#FFD8A8:FASE 6: REQUERIMIENTO AL MEJOR VALORADO
+Acto "Mejor valorado — Requerimiento" (art. 159.4.f.4º);
+
+note right
+  Plazo para el licitador:
+  7 días hábiles desde el envío
+  de la comunicación electrónica
+end note
+
+#A7D3F2:Iniciar acto de mejor valorado — requerimiento;
+#E34220:Seleccionar licitador propuesto;
+#E34220:Pulsar "Proponer mejor valorado";
+#E34220:Rellenar texto del acuerdo;
+#E34220:Guardar;
+#E34220:Comunicaciones: requerimiento de documentación y garantía definitiva;
+
+note right
+  Requerir: garantía definitiva +
+  compromiso art. 75.2 + documentación
+  acreditativa de medios comprometidos (art. 76.2)
+  + doc. no inscrita en ROLECE (si procede)
+end note
+
+|Licitador|
+#FFF3B0:Recibir comunicación electrónica de requerimiento;
+#FFF3B0:Constituir garantía definitiva;
+#FFF3B0:Remitir documentación requerida vía Plataforma;
+
+|OA|
+#e0e0e0:⏳ Esperar plazo de 7 días hábiles;
+
+''--------------------------Apertura documentación requerimiento--------------------------
+
+#FFD8A8:FASE 7: APERTURA DE DOCUMENTACIÓN DEL REQUERIMIENTO
+Acto "Apertura de requerimiento de documentación";
+
+#E34220:Iniciar acto;
+
+if (¿Sobres cifrados?) then (Sí)
+    #E34220:Descifrar sobres de requerimiento;
+endif
+
+#E34220:Abrir sobres de requerimiento;
+
+|Sistema|
+#052b02:Documentación en estado "Disponible";
+
+|OA|
+#A7D3F2:Acceder y valorar documentación remitida;
+#A7D3F2:Acceder al contenido del sobre;
+
+if (¿Documentación admitida?) then (Sí)
+    #A7D3F2:Continuar con el proceso de adjudicación;
+else (No)
+    #FFB3B3:Cambiar estado del licitador a "Excluido";
+    #E34220:Notificar exclusión al licitador;
+
+    note right
+      Se efectúa propuesta de adjudicación
+      al siguiente candidato en puntuación,
+      otorgándole nuevo plazo para constituir
+      garantía definitiva (art. 159.4.f)
+    end note
+
+    #FFD8A8:Volver a Fase 6 con el siguiente candidato;
+endif
+
+|Sistema|
+#052b02:Finalizar proceso y habilitar adjudicación definitiva;
+
+|OA|
+#A7D3F2:Generar acta de la sesión (opcional);
+note right
+  Aprobación en la siguiente sesión
+end note
+
+stop
+
+@enduml

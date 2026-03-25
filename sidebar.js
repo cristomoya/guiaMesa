@@ -417,6 +417,7 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
         let expedienteData = null; // Datos cargados del XML del expediente
         let lastGestionaPromptSignature = '';
         let gestionaWatcherBound = false;
+        let lastFocusedStepIndex = 0;
 
         function loadData() {
             const activeId = ExpedienteManager.getActiveId();
@@ -509,7 +510,6 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
 
             saveData();
             renderFlow();
-            focusCurrentStepCard(true);
             autoAdvanceSystemSteps();
             return true;
         }
@@ -650,7 +650,21 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
             return actors;
         }
 
+        function getFlowFocusStepIndex() {
+            const activeElement = document.activeElement;
+            const activeNode = activeElement instanceof HTMLElement ? activeElement.closest('.node[data-step-index]') : null;
+            if (activeNode) {
+                const activeIndex = Number.parseInt(activeNode.getAttribute('data-step-index') || '', 10);
+                if (Number.isInteger(activeIndex)) return activeIndex;
+            }
+            return Number.isInteger(lastFocusedStepIndex) ? lastFocusedStepIndex : currentStep;
+        }
+
         function renderFlow() {
+            const focusStepIndex = getFlowFocusStepIndex();
+            const scrollingElement = document.scrollingElement || document.documentElement;
+            const scrollTop = scrollingElement ? scrollingElement.scrollTop : 0;
+            const scrollLeft = scrollingElement ? scrollingElement.scrollLeft : 0;
             const flowchart = document.getElementById('flowchart');
             flowchart.replaceChildren();
             const compactSidebar = flowchart.clientWidth <= 900;
@@ -672,6 +686,10 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
                 populateJumpStepSelector();
                 updateStats();
                 updatePhaseProgress();
+                focusStepCard(focusStepIndex, { scrollToCard: false });
+                if (scrollingElement) {
+                    requestAnimationFrame(() => scrollingElement.scrollTo({ top: scrollTop, left: scrollLeft, behavior: 'auto' }));
+                }
                 return;
             }
 
@@ -748,6 +766,10 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
             populateJumpStepSelector();
             updateStats();
             updatePhaseProgress();
+            focusStepCard(focusStepIndex, { scrollToCard: false });
+            if (scrollingElement) {
+                requestAnimationFrame(() => scrollingElement.scrollTo({ top: scrollTop, left: scrollLeft, behavior: 'auto' }));
+            }
             // Actualizar timeline si está visible
             const timelineContent = document.getElementById('timelineContent');
             if (timelineContent && timelineContent.classList.contains('active')) {
@@ -760,19 +782,21 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
             node.className = 'node';
             node.setAttribute('data-actor', step.actor);
             node.setAttribute('data-step-index', String(index));
-            node.tabIndex = -1;
+            node.tabIndex = 0;
             const bookmark = getPlacspBookmarkForStep(step);
             const showActorBadge = options.showActorBadge !== false;
             
             if (completedSteps.has(step.id)) node.classList.add('completed');
             if (index === currentStep) {
                 node.classList.add('current');
-                node.tabIndex = 0;
                 // Añadir animación si es un paso del Sistema
                 if (step.actor === 'Sistema' && step.tipo !== 'decision' && step.tipo !== 'loop') {
                     node.classList.add('auto-completing');
                 }
             }
+            node.addEventListener('focus', () => {
+                lastFocusedStepIndex = index;
+            });
             if (index > currentStep) node.classList.add('pending');
             if (step.tipo === 'decision') node.classList.add('decision-node');
             if (step.tipo === 'loop') node.classList.add('loop-node');
@@ -926,23 +950,34 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
             return frag;
         }
 
-        function focusCurrentStepCard(scrollToCard = true) {
+        function focusStepCard(stepIndex, { scrollToCard = true } = {}) {
             const flowchart = document.getElementById('flowchart');
             if (!flowchart) return;
 
-            const currentNode = flowchart.querySelector(`.node[data-step-index="${currentStep}"]`) || flowchart.querySelector('.node.current');
-            if (!currentNode) return;
+            const targetNode = flowchart.querySelector(`.node[data-step-index="${stepIndex}"]`)
+                || flowchart.querySelector(`.node[data-step-index="${currentStep}"]`)
+                || flowchart.querySelector('.node.current');
+            if (!targetNode) return;
+
+            const resolvedIndex = Number.parseInt(targetNode.getAttribute('data-step-index') || '', 10);
+            if (Number.isInteger(resolvedIndex)) {
+                lastFocusedStepIndex = resolvedIndex;
+            }
 
             try {
-                currentNode.focus({ preventScroll: true });
+                targetNode.focus({ preventScroll: true });
             } catch (e) {
-                currentNode.focus();
+                targetNode.focus();
             }
 
             if (scrollToCard) {
                 // Evita el efecto de "subir y bajar": solo acerca la tarjeta si queda fuera de vista.
-                currentNode.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'nearest' });
+                targetNode.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'nearest' });
             }
+        }
+
+        function focusCurrentStepCard(scrollToCard = true) {
+            focusStepCard(currentStep, { scrollToCard });
         }
 
         function handleDecision(stepId, decision) {
@@ -1150,7 +1185,6 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
                 stepNotes[currentNodeId] = document.getElementById('notasTextarea').value;
                 saveData();
                 renderFlow();
-                focusCurrentStepCard(false);
                 cerrarModal();
                 showToast('✅ Notas guardadas correctamente');
             }
@@ -1342,7 +1376,6 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
                 maybeNotifyGestionaOpenExpediente().catch((error) => {
                     console.warn('No se pudo actualizar el aviso de Gestiona:', error);
                 });
-                requestAnimationFrame(() => focusCurrentStepCard(false));
             };
 
             if (WEBEXT_API.tabs.onActivated) {
