@@ -1,3 +1,4 @@
+// Cambios aplicados: panel inline de expedientes simplificado, modal completo para gestionar expedientes y puntos de control, botón flotante de guardado rápido y sincronización con paneles colapsables.
 // ============================================================
 // PATCH ?" gestión multi-expediente y puntos de control
 // sidebar-patch.js  ?" incluir DESPU?S de sidebar.js
@@ -136,46 +137,95 @@
     // "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
 
     function buildPanel() {
-        // Evitar duplicados
         if (document.getElementById('emPanel')) return;
 
-        const panel = document.createElement('div');
+        const panel = document.createElement('section');
         panel.id = 'emPanel';
-        panel.className = 'em-panel';
+        panel.className = 'em-panel collapsible-panel panel-collapsed';
+        panel.setAttribute('data-panel-key', 'expedientes');
+
         const header = document.createElement('div');
-        header.className = 'em-header';
-        header.id = 'emHeaderToggle';
+        header.className = 'em-header panel-header';
 
-        const title = document.createElement('span');
-        title.textContent = 'Expedientes';
+        const toggle = document.createElement('button');
+        toggle.className = 'panel-toggle';
+        toggle.type = 'button';
+        toggle.setAttribute('data-panel-target', 'expedientes');
+        toggle.setAttribute('aria-expanded', 'false');
 
-        const headerActions = document.createElement('div');
-        headerActions.className = 'em-header-actions';
-
-        const activeLabel = document.createElement('span');
-        activeLabel.className = 'em-active-label';
-        activeLabel.id = 'emActiveLabel';
-
-        const btnNuevo = document.createElement('button');
-        btnNuevo.className = 'em-btn em-btn-sm em-btn-primary';
-        btnNuevo.id = 'emBtnNuevo';
-        btnNuevo.title = 'Nuevo expediente';
-        btnNuevo.textContent = '+ Nuevo';
-
+        const toggleLabel = document.createElement('span');
+        toggleLabel.textContent = '📁 Expedientes';
         const toggleIcon = document.createElement('span');
-        toggleIcon.className = 'em-toggle-icon';
-        toggleIcon.id = 'emToggleIcon';
-        toggleIcon.textContent = 'v';
+        toggleIcon.className = 'panel-toggle-icon';
+        toggleIcon.textContent = '▾';
+        toggle.appendChild(toggleLabel);
+        toggle.appendChild(toggleIcon);
 
-        headerActions.appendChild(activeLabel);
-        headerActions.appendChild(btnNuevo);
-        headerActions.appendChild(toggleIcon);
-        header.appendChild(title);
-        header.appendChild(headerActions);
+        header.appendChild(toggle);
 
         const body = document.createElement('div');
-        body.className = 'em-body';
+        body.className = 'em-body panel-body';
         body.id = 'emBody';
+
+        const summary = document.createElement('div');
+        summary.className = 'em-summary';
+        summary.id = 'emSummary';
+
+        const summaryName = document.createElement('div');
+        summaryName.className = 'em-summary-name';
+        summaryName.id = 'emActiveLabel';
+
+        const summaryMeta = document.createElement('div');
+        summaryMeta.className = 'em-summary-meta';
+        summaryMeta.id = 'emSummaryMeta';
+
+        const progressBar = document.createElement('div');
+        progressBar.className = 'em-progress-bar em-progress-bar-inline';
+        const progressFill = document.createElement('div');
+        progressFill.className = 'em-progress-fill';
+        progressFill.id = 'emActiveProgressFill';
+        progressBar.appendChild(progressFill);
+
+        const openModalBtn = document.createElement('button');
+        openModalBtn.className = 'em-btn em-btn-primary';
+        openModalBtn.id = 'emBtnOpenModal';
+        openModalBtn.type = 'button';
+        openModalBtn.textContent = 'Cambiar expediente';
+
+        summary.appendChild(summaryName);
+        summary.appendChild(summaryMeta);
+        summary.appendChild(progressBar);
+        summary.appendChild(openModalBtn);
+        body.appendChild(summary);
+
+        panel.appendChild(header);
+        panel.appendChild(body);
+
+        const modal = document.createElement('div');
+        modal.id = 'emModal';
+        modal.className = 'modal';
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-content em-modal-content';
+        const modalHeader = document.createElement('div');
+        modalHeader.className = 'modal-header';
+        const modalTitle = document.createElement('h2');
+        modalTitle.textContent = 'Expedientes';
+        const modalClose = document.createElement('button');
+        modalClose.className = 'close-btn';
+        modalClose.id = 'emBtnCloseModal';
+        modalClose.type = 'button';
+        modalClose.textContent = '×';
+        modalHeader.appendChild(modalTitle);
+        modalHeader.appendChild(modalClose);
+
+        const modalTools = document.createElement('div');
+        modalTools.className = 'em-modal-tools';
+        const btnNuevo = document.createElement('button');
+        btnNuevo.className = 'em-btn em-btn-primary';
+        btnNuevo.id = 'emBtnNuevo';
+        btnNuevo.type = 'button';
+        btnNuevo.textContent = '+ Nuevo expediente';
+        modalTools.appendChild(btnNuevo);
 
         const list = document.createElement('div');
         list.id = 'emList';
@@ -183,26 +233,21 @@
 
         const sectionTitle = document.createElement('div');
         sectionTitle.className = 'em-section-title';
-        sectionTitle.appendChild(document.createTextNode('Puntos de control - '));
-        const cpName = document.createElement('span');
-        cpName.id = 'emCpExpedienteNombre';
-        sectionTitle.appendChild(cpName);
+        sectionTitle.textContent = 'Puntos de control';
 
         const cpBar = document.createElement('div');
         cpBar.className = 'em-cp-bar';
-
         const cpInput = document.createElement('input');
         cpInput.type = 'text';
         cpInput.id = 'emCpLabel';
         cpInput.className = 'em-input';
         cpInput.placeholder = 'Nombre del punto de control...';
         cpInput.maxLength = 60;
-
         const btnGuardarCp = document.createElement('button');
         btnGuardarCp.className = 'em-btn em-btn-primary';
         btnGuardarCp.id = 'emBtnGuardarCp';
+        btnGuardarCp.type = 'button';
         btnGuardarCp.textContent = 'Guardar';
-
         cpBar.appendChild(cpInput);
         cpBar.appendChild(btnGuardarCp);
 
@@ -210,47 +255,55 @@
         cpList.id = 'emCpList';
         cpList.className = 'em-cp-list';
 
-        body.appendChild(list);
-        body.appendChild(sectionTitle);
-        body.appendChild(cpBar);
-        body.appendChild(cpList);
+        modalContent.appendChild(modalHeader);
+        modalContent.appendChild(modalTools);
+        modalContent.appendChild(list);
+        modalContent.appendChild(sectionTitle);
+        modalContent.appendChild(cpBar);
+        modalContent.appendChild(cpList);
+        modal.appendChild(modalContent);
 
-        panel.appendChild(header);
-        panel.appendChild(body);
-        // Insertar antes del flowchart
+        const quickBtn = document.getElementById('btnQuickCheckpoint');
+
         const content = document.querySelector('.content') || document.body;
         content.insertAdjacentElement('afterbegin', panel);
+        document.body.appendChild(modal);
 
-        // Colapsar/expandir
-        document.getElementById('emHeaderToggle').addEventListener('click', (e) => {
-            if (e.target.closest('button') && e.target.id !== 'emHeaderToggle') return;
-            togglePanel();
+        toggle.addEventListener('click', () => {
+            if (window.SidebarFlowAPI && typeof window.SidebarFlowAPI.togglePanelState === 'function') {
+                window.SidebarFlowAPI.togglePanelState('expedientes');
+            }
         });
-
-        document.getElementById('emBtnNuevo').addEventListener('click', (e) => {
-            e.stopPropagation();
-            crearNuevoExpediente();
+        openModalBtn.addEventListener('click', openExpedientesModal);
+        btnNuevo.addEventListener('click', crearNuevoExpediente);
+        btnGuardarCp.addEventListener('click', guardarPuntoControl);
+        modalClose.addEventListener('click', closeExpedientesModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target.id === 'emModal') closeExpedientesModal();
         });
-
-        document.getElementById('emBtnGuardarCp').addEventListener('click', guardarPuntoControl);
+        if (quickBtn) quickBtn.addEventListener('click', guardarPuntoControlRapido);
 
         refreshPanel();
     }
 
-    let _panelOpen = false;
+    function openExpedientesModal() {
+        const modal = document.getElementById('emModal');
+        if (modal) modal.classList.add('active');
+    }
 
-    function togglePanel() {
-        _panelOpen = !_panelOpen;
-        const body = document.getElementById('emBody');
-        const icon = document.getElementById('emToggleIcon');
-        if (body) body.style.display = _panelOpen ? 'block' : 'none';
-        if (icon) icon.textContent = _panelOpen ? '^' : 'v';
+    function closeExpedientesModal() {
+        const modal = document.getElementById('emModal');
+        if (modal) modal.classList.remove('active');
     }
 
     function refreshPanel() {
         renderExpedienteList();
         renderCheckpointList();
         updateActiveLabel();
+        updateQuickCheckpointButton();
+        if (window.SidebarFlowAPI && typeof window.SidebarFlowAPI.refreshUiPanels === 'function') {
+            window.SidebarFlowAPI.refreshUiPanels();
+        }
     }
 
     function updateActiveLabel() {
@@ -259,9 +312,22 @@
         const list = ExpedienteManager.getList();
         const active = list.find(e => e.id === _activeId);
         lbl.textContent = active ? active.nombre : '';
+        const summaryMeta = document.getElementById('emSummaryMeta');
+        const progressFill = document.getElementById('emActiveProgressFill');
+        if (summaryMeta) {
+            const flowState = active ? ExpedienteManager.loadFlowState(active.id) : null;
+            const total = (typeof flowDefinition !== 'undefined') ? flowDefinition.length : 0;
+            const pct = ExpedienteManager.calcProgress(flowState, total);
+            const checks = active ? ExpedienteManager.getCheckpoints(active.id).length : 0;
+            summaryMeta.textContent = active ? `${pct}% completado · ${checks} puntos de control` : 'Sin expediente activo';
+            if (progressFill) progressFill.style.width = `${pct}%`;
+        }
+    }
 
-        const cpNombre = document.getElementById('emCpExpedienteNombre');
-        if (cpNombre) cpNombre.textContent = active ? active.nombre : '';
+    function updateQuickCheckpointButton() {
+        const quickBtn = document.getElementById('btnQuickCheckpoint');
+        if (!quickBtn) return;
+        quickBtn.hidden = !_activeId;
     }
 
     // "?"? Lista de expedientes "?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?"?
@@ -451,19 +517,32 @@
             stepStartTimes: {}
         });
         ExpedienteManager.clearXMLData(id);
+        if (window.DiagramManager && typeof window.DiagramManager.getCatalogEntries === 'function' && typeof window.DiagramManager.setDiagramForExpediente === 'function') {
+            const catalog = window.DiagramManager.getCatalogEntries();
+            if (Array.isArray(catalog) && catalog.length > 0) {
+                const options = catalog.map((entry, index) => `${index}. ${entry.nombre}`).join('\n');
+                const selected = prompt(
+                    `Selecciona el diagrama para el nuevo expediente:\n${options}\n\nDeja vacio o usa 0 para el predeterminado.`,
+                    '0'
+                );
+                const index = Number.parseInt(String(selected || '0').trim(), 10);
+                const chosen = Number.isInteger(index) && catalog[index] ? catalog[index] : catalog[0];
+                window.DiagramManager.setDiagramForExpediente(id, chosen.id, { apply: false });
+            }
+        }
 
         activarExpediente(id);
     }
 
     function activarExpediente(id) {
         if (id === _activeId) return;
+        if (typeof saveData === 'function') saveData();
+        if (typeof saveExpedienteData === 'function') saveExpedienteData();
         _activeId = id;
         ExpedienteManager.setActiveId(id);
-        try {
-            window.dispatchEvent(new CustomEvent('em:active-expediente-changed', { detail: { id } }));
-        } catch (_) {}
         recargarEstadoActivo();
         refreshPanel();
+        closeExpedientesModal();
         showEmToast('Expediente cargado');
     }
 
@@ -486,6 +565,16 @@
         const cp = ExpedienteManager.saveCheckpoint(_activeId, finalLabel, flowState, xmlData);
         if (labelInput) labelInput.value = '';
         renderCheckpointList();
+        showEmToast(`Punto guardado: ${cp.label}`);
+    }
+
+    function guardarPuntoControlRapido() {
+        if (!_activeId) return;
+        const finalLabel = new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'medium' });
+        const flowState = ExpedienteManager.loadFlowState(_activeId) || {};
+        const xmlData = ExpedienteManager.loadXMLData(_activeId);
+        const cp = ExpedienteManager.saveCheckpoint(_activeId, finalLabel, flowState, xmlData);
+        refreshPanel();
         showEmToast(`Punto guardado: ${cp.label}`);
     }
 
@@ -786,6 +875,57 @@
             opacity: 1;
             transform: translateY(0);
         }
+        .em-panel {
+            border-left: 4px solid #0f766e;
+        }
+        .em-summary {
+            display: grid;
+            gap: 10px;
+        }
+        .em-summary-name {
+            font-weight: 700;
+            color: #0f172a;
+            font-size: 14px;
+        }
+        .em-summary-meta {
+            font-size: 12px;
+            color: #64748b;
+        }
+        .em-progress-bar-inline {
+            margin-top: 0;
+            height: 6px;
+            border-radius: 999px;
+        }
+        .em-modal-content {
+            max-width: 620px;
+            width: calc(100% - 24px);
+            max-height: calc(100vh - 24px);
+            overflow-y: auto;
+        }
+        .em-modal-tools {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 12px;
+        }
+        .em-list {
+            max-height: 280px;
+            overflow-y: auto;
+        }
+        @media (max-width: 560px) {
+            .em-cp-bar,
+            .em-modal-tools {
+                flex-direction: column;
+            }
+            .em-item {
+                flex-direction: column;
+            }
+            .em-item-actions {
+                flex-direction: row;
+                justify-content: flex-end;
+                border-left: none;
+                border-top: 1px solid #e5e7eb;
+            }
+        }
         `;
         document.head.appendChild(style);
     }
@@ -797,6 +937,13 @@
     function init() {
         injectStyles();
         resolveActiveExpediente();
+        window.addEventListener('em:active-expediente-changed', (event) => {
+            const nextId = event && event.detail ? event.detail.id : null;
+            if (!nextId || nextId === _activeId) return;
+            _activeId = nextId;
+            recargarEstadoActivo();
+            refreshPanel();
+        });
         // Esperar a que sidebar.js haya construido el DOM
         const ready = () => {
             buildPanel();

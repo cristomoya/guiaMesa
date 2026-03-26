@@ -102,6 +102,18 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
         const PLACSP_DOC_URL = encodeURI('guia.html');
         const PLACSP_ASSETS_DIR = 'images';
         const SHOW_PHASE_VISUALS = false;
+        const UI_PANEL_STATES_KEY = 'ui_panel_states';
+        const UI_FLOW_VIEW_MODE_KEY = 'ui_flow_view_mode';
+        const UI_FIRST_TIME_SHOWN_KEY = 'ui_first_time_shown';
+        const FLOW_VIEW_LINEAR = 'linear';
+        const FLOW_VIEW_SWIMLANES = 'swimlanes';
+        const DEFAULT_PANEL_STATES = {
+            expediente: false,
+            help: false,
+            timeline: false,
+            expedientes: false,
+            diagram: false
+        };
         
         //... Definición de fases del proceso
         const PROCESS_PHASES = [
@@ -256,6 +268,269 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
                 'Licitador': '#fbbf24'
             };
             return colors[actor] || '#6c757d';
+        }
+
+        function loadPanelStates() {
+            try {
+                const raw = JSON.parse(localStorage.getItem(UI_PANEL_STATES_KEY) || '{}');
+                return {
+                    ...DEFAULT_PANEL_STATES,
+                    ...(raw && typeof raw === 'object' ? raw : {})
+                };
+            } catch (_e) {
+                return { ...DEFAULT_PANEL_STATES };
+            }
+        }
+
+        function savePanelStates() {
+            localStorage.setItem(UI_PANEL_STATES_KEY, JSON.stringify(panelStates));
+        }
+
+        function loadFlowViewMode() {
+            const value = String(localStorage.getItem(UI_FLOW_VIEW_MODE_KEY) || '').trim();
+            return value === FLOW_VIEW_SWIMLANES ? FLOW_VIEW_SWIMLANES : FLOW_VIEW_LINEAR;
+        }
+
+        function saveFlowViewMode() {
+            localStorage.setItem(UI_FLOW_VIEW_MODE_KEY, flowViewMode);
+        }
+
+        function getPanelState(panelKey) {
+            return Boolean(panelStates[panelKey]);
+        }
+
+        function getActorShortLabel(actor) {
+            const normalized = String(actor || '').trim();
+            if (!normalized) return 'OA';
+            if (normalized === 'Sistema') return 'SIS';
+            if (normalized === 'Licitador') return 'LIC';
+            if (normalized === 'Órgano de Contratación (OC)') return 'OC';
+            if (normalized === 'Órgano de Asistencia (OA)') return 'OA';
+            const compact = normalized
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^A-Za-z]/g, '')
+                .toUpperCase();
+            return (compact || 'ACT').slice(0, 4);
+        }
+
+        function isLinearFlowView() {
+            return flowViewMode !== FLOW_VIEW_SWIMLANES;
+        }
+
+        function setExpandedLinearStep(stepId, expanded) {
+            if (expanded) expandedLinearSteps[stepId] = true;
+            else delete expandedLinearSteps[stepId];
+        }
+
+        function isStepExpanded(step, index) {
+            if (!step) return false;
+            if (index === currentStep) return true;
+            return Boolean(expandedLinearSteps[step.id]);
+        }
+
+        function toggleLinearStep(step, index) {
+            if (!step || index === currentStep) return;
+            setExpandedLinearStep(step.id, !isStepExpanded(step, index));
+            renderFlow();
+        }
+
+        function isNodeVisibleInViewport(node) {
+            if (!node) return false;
+            const rect = node.getBoundingClientRect();
+            const viewHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+            return rect.top >= 0 && rect.bottom <= viewHeight;
+        }
+
+        function updateCurrentStepButtonState() {
+            const btn = document.getElementById('btnPasoActual');
+            if (!btn) return;
+            const currentNode = document.querySelector('.node.current');
+            const visible = isNodeVisibleInViewport(currentNode);
+            btn.classList.toggle('is-disabled-visual', visible);
+            btn.setAttribute('aria-disabled', visible ? 'true' : 'false');
+            btn.title = visible ? 'El paso actual ya está visible' : 'Ir al paso actual';
+        }
+
+        function scrollToCurrentStep() {
+            const currentNode = document.querySelector('.node.current');
+            if (!currentNode) return;
+            currentNode.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+            currentNode.classList.remove('current-scroll-highlight');
+            void currentNode.offsetWidth;
+            currentNode.classList.add('current-scroll-highlight');
+            setTimeout(() => currentNode.classList.remove('current-scroll-highlight'), 1500);
+            updateCurrentStepButtonState();
+        }
+
+        function openReferenceForStep(step) {
+            if (!step || !step.imageUrl) return;
+            currentReferenceStepId = currentReferenceStepId === step.id ? null : step.id;
+            renderFlow();
+        }
+
+        function syncPanelState(panelKey) {
+            const expanded = getPanelState(panelKey);
+            const panelSelectors = {
+                expediente: '.collapsible-panel[data-panel-key="expediente"]',
+                help: '.collapsible-panel[data-panel-key="help"]',
+                timeline: '.collapsible-panel[data-panel-key="timeline"]',
+                expedientes: '#emPanel',
+                diagram: '#dmPanel'
+            };
+            const bodySelectors = {
+                expediente: '#expedienteInfo',
+                help: '.legend .panel-body',
+                timeline: '#timelineContent',
+                expedientes: '#emBody',
+                diagram: '#dmBody'
+            };
+            const panel = document.querySelector(panelSelectors[panelKey] || '');
+            const body = document.querySelector(bodySelectors[panelKey] || '');
+            if (panel) panel.classList.toggle('panel-collapsed', !expanded);
+            if (body) {
+                body.hidden = !expanded;
+                body.classList.toggle('active', expanded);
+            }
+            document.querySelectorAll(`[data-panel-target="${panelKey}"]`).forEach((el) => {
+                if (el.classList.contains('panel-tool-btn')) {
+                    el.classList.toggle('active', expanded);
+                    el.setAttribute('aria-pressed', expanded ? 'true' : 'false');
+                }
+                if (el.classList.contains('panel-toggle')) {
+                    el.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+                }
+            });
+            if (panelKey === 'timeline') {
+                const toggleText = document.getElementById('timelineToggleText');
+                if (toggleText) toggleText.textContent = expanded ? 'Ocultar' : 'Mostrar';
+            }
+        }
+
+        function syncAllPanelStates() {
+            Object.keys(DEFAULT_PANEL_STATES).forEach(syncPanelState);
+            updateCurrentStepButtonState();
+        }
+
+        function setPanelState(panelKey, expanded) {
+            panelStates[panelKey] = Boolean(expanded);
+            savePanelStates();
+            syncPanelState(panelKey);
+            if (panelKey === 'timeline' && expanded) updateTimeline();
+        }
+
+        function togglePanelState(panelKey) {
+            setPanelState(panelKey, !getPanelState(panelKey));
+        }
+
+        function closeWelcomeModal() {
+            const modal = document.getElementById('welcomeModal');
+            if (modal) modal.classList.remove('active');
+            localStorage.setItem(UI_FIRST_TIME_SHOWN_KEY, '1');
+        }
+
+        function buildWelcomeModalContent() {
+            const body = document.getElementById('welcomeModalBody');
+            if (!body) return;
+            body.replaceChildren();
+
+            const intro = document.createElement('p');
+            intro.textContent = 'La guía se ha simplificado para seguir el flujo principal y abrir el detalle solo cuando haga falta.';
+            body.appendChild(intro);
+
+            const list = document.createElement('div');
+            list.className = 'welcome-modal-list';
+            [
+                'Usa ◀ Retroceder y ▶ Continuar para avanzar por el proceso.',
+                '📍 Paso actual te lleva al nodo activo y lo resalta brevemente.',
+                'La barra de iconos abre expediente, ayuda, timeline, expedientes y diagrama.',
+                '💾 Guardar punto crea un punto de control rápido en el expediente activo.'
+            ].forEach((textValue) => {
+                const item = document.createElement('div');
+                item.className = 'welcome-modal-item';
+                item.textContent = textValue;
+                list.appendChild(item);
+            });
+            body.appendChild(list);
+        }
+
+        function maybeShowWelcomeModal() {
+            buildWelcomeModalContent();
+            if (localStorage.getItem(UI_FIRST_TIME_SHOWN_KEY) === '1') return;
+            const modal = document.getElementById('welcomeModal');
+            if (modal) modal.classList.add('active');
+        }
+
+        function updateHeaderProgress(percent) {
+            const progress = Number.isFinite(percent) ? percent : 0;
+            const bar = document.getElementById('headerProgressBar');
+            const container = document.getElementById('headerProgress');
+            if (bar) bar.style.width = `${Math.max(0, Math.min(100, progress))}%`;
+            if (container) container.title = `${progress}% completado`;
+        }
+
+        function shouldUseDecisionBanner(step, index) {
+            return false;
+        }
+
+        function updateDecisionBanner() {
+            const banner = document.getElementById('decisionBanner');
+            if (!banner) return;
+            banner.replaceChildren();
+            banner.hidden = true;
+            currentDecisionBannerStepId = null;
+        }
+
+        function initUiControls() {
+            const optionsButton = document.getElementById('btnOptionsMenu');
+            const optionsMenu = document.getElementById('optionsMenu');
+            if (optionsButton && optionsMenu) {
+                optionsButton.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const isOpen = optionsMenu.classList.toggle('open');
+                    optionsButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                });
+                document.addEventListener('click', (event) => {
+                    if (!optionsMenu.contains(event.target) && event.target !== optionsButton) {
+                        optionsMenu.classList.remove('open');
+                        optionsButton.setAttribute('aria-expanded', 'false');
+                    }
+                });
+            }
+
+            const viewToggle = document.getElementById('flowViewModeToggle');
+            if (viewToggle) {
+                viewToggle.checked = flowViewMode === FLOW_VIEW_SWIMLANES;
+                viewToggle.addEventListener('change', () => {
+                    flowViewMode = viewToggle.checked ? FLOW_VIEW_SWIMLANES : FLOW_VIEW_LINEAR;
+                    saveFlowViewMode();
+                    renderFlow();
+                    focusCurrentStepCard(false);
+                });
+            }
+
+            document.querySelectorAll('.panel-tool-btn, .panel-toggle').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const panelKey = btn.getAttribute('data-panel-target');
+                    if (panelKey) togglePanelState(panelKey);
+                });
+            });
+
+            const welcomeClose = document.getElementById('btnCerrarWelcomeModal');
+            if (welcomeClose) welcomeClose.addEventListener('click', closeWelcomeModal);
+            const welcomeStart = document.getElementById('btnWelcomeModalClose');
+            if (welcomeStart) welcomeStart.addEventListener('click', closeWelcomeModal);
+            const welcomeModal = document.getElementById('welcomeModal');
+            if (welcomeModal) {
+                welcomeModal.addEventListener('click', (event) => {
+                    if (event.target === welcomeModal) closeWelcomeModal();
+                });
+            }
+
+            const btnPasoActual = document.getElementById('btnPasoActual');
+            if (btnPasoActual) btnPasoActual.addEventListener('click', scrollToCurrentStep);
+
+            syncAllPanelStates();
         }
 
         function buildFlowDefinition(source) {
@@ -418,6 +693,11 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
         let lastGestionaPromptSignature = '';
         let gestionaWatcherBound = false;
         let lastFocusedStepIndex = 0;
+        let panelStates = loadPanelStates();
+        let flowViewMode = loadFlowViewMode();
+        let expandedLinearSteps = {};
+        let currentReferenceStepId = null;
+        let currentDecisionBannerStepId = null;
 
         function loadData() {
             const activeId = ExpedienteManager.getActiveId();
@@ -668,9 +948,10 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
             const flowchart = document.getElementById('flowchart');
             flowchart.replaceChildren();
             const compactSidebar = flowchart.clientWidth <= 900;
+            const linearMode = isLinearFlowView();
 
             const flowContainer = document.createElement('div');
-            flowContainer.className = 'flow-container swimlanes-layout';
+            flowContainer.className = 'flow-container ' + (linearMode ? 'linear-layout' : 'swimlanes-layout');
 
             const visibleSteps = [];
             flowDefinition.forEach((step, index) => {
@@ -690,10 +971,12 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
                 if (scrollingElement) {
                     requestAnimationFrame(() => scrollingElement.scrollTo({ top: scrollTop, left: scrollLeft, behavior: 'auto' }));
                 }
+                updateDecisionBanner();
+                updateCurrentStepButtonState();
                 return;
             }
 
-            if (!compactSidebar) {
+            if (!linearMode && !compactSidebar) {
                 const laneHeaders = document.createElement('div');
                 laneHeaders.className = 'swimlane-headers';
                 laneHeaders.style.gridTemplateColumns = `repeat(${actors.length}, minmax(220px, 1fr))`;
@@ -710,6 +993,11 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
             let lastPhaseIndex = -1;
 
             visibleSteps.forEach(({ step, index }, visibleIndex) => {
+                if (linearMode) {
+                    const node = createNode(step, index, { showActorBadge: true, linearMode: true });
+                    flowContainer.appendChild(node);
+                    return;
+                }
 
                 // Insertar separador de fase
                 const currentPhaseIndex = PROCESS_PHASES.findIndex(p => 
@@ -770,11 +1058,9 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
             if (scrollingElement) {
                 requestAnimationFrame(() => scrollingElement.scrollTo({ top: scrollTop, left: scrollLeft, behavior: 'auto' }));
             }
-            // Actualizar timeline si está visible
-            const timelineContent = document.getElementById('timelineContent');
-            if (timelineContent && timelineContent.classList.contains('active')) {
-                updateTimeline();
-            }
+            updateDecisionBanner();
+            updateCurrentStepButtonState();
+            if (getPanelState('timeline')) updateTimeline();
         }
 
         function createNode(step, index, options = {}) {
@@ -785,6 +1071,8 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
             node.tabIndex = 0;
             const bookmark = getPlacspBookmarkForStep(step);
             const showActorBadge = options.showActorBadge !== false;
+            const linearMode = options.linearMode === true;
+            const expandedInLinear = !linearMode || isStepExpanded(step, index);
             
             if (completedSteps.has(step.id)) node.classList.add('completed');
             if (index === currentStep) {
@@ -801,6 +1089,8 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
             if (step.tipo === 'decision') node.classList.add('decision-node');
             if (step.tipo === 'loop') node.classList.add('loop-node');
             if (step.isPhaseCue) node.classList.add('phase-jump-node');
+            if (linearMode) node.classList.add('actor-inline');
+            if (linearMode && !expandedInLinear) node.classList.add('node-collapsed');
 
             // Hacer el nodo clickeable para marcar como completado
             if (index === currentStep && step.tipo !== 'decision' && step.tipo !== 'loop' && step.actor !== 'Sistema') {
@@ -813,18 +1103,29 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
                     }
                 };
             }
+            if (linearMode && index !== currentStep) {
+                node.style.cursor = 'pointer';
+                node.addEventListener('click', (e) => {
+                    if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'IMG') {
+                        toggleLinearStep(step, index);
+                    }
+                });
+            }
 
             // Mostrar badge de actor si cambia
             const prevStep = index > 0 ? flowDefinition[index - 1] : null;
-            if (showActorBadge && !step.isPhaseCue && (!prevStep || prevStep.actor !== step.actor)) {
+            if (showActorBadge && !step.isPhaseCue && (linearMode || !prevStep || prevStep.actor !== step.actor)) {
                 const actorBadge = document.createElement('div');
                 actorBadge.className = 'actor-badge';
-                actorBadge.textContent = step.actor;
+                actorBadge.textContent = linearMode ? getActorShortLabel(step.actor) : step.actor;
                 if (step.actor === 'Sistema' && index === currentStep) {
-                    actorBadge.textContent = step.actor + ' ⚡';
+                    actorBadge.textContent = linearMode ? 'SIS⚡' : step.actor + ' ⚡';
                     actorBadge.title = 'Se completa automáticamente';
                 }
                 actorBadge.style.background = getActorColor(step.actor);
+                if (linearMode) {
+                    actorBadge.title = step.actor;
+                }
                 node.appendChild(actorBadge);
             }
 
@@ -839,31 +1140,20 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
 
             const text = document.createElement('div');
             text.className = 'node-text';
-            text.textContent = step.texto;
+            text.textContent = step.isPhaseCue
+                ? String(step.phaseTitle || step.texto || '').toUpperCase()
+                : step.texto;
             if (step.color) text.style.color = step.color;
             content.appendChild(text);
             
             node.appendChild(content);
-
-            if (step.isPhaseCue) {
-                const jumpHint = document.createElement('div');
-                jumpHint.className = 'phase-jump-hint';
-                jumpHint.textContent = 'Salto de acto administrativo';
-                node.appendChild(jumpHint);
-            }
             
             // Añadir información contextual del expediente si está disponible
             if (expedienteData && index === currentStep) {
                 const contextInfo = getStepContext(step);
                 if (contextInfo) {
                     const contextDiv = document.createElement('div');
-                    contextDiv.style.marginTop = '12px';
-                    contextDiv.style.padding = '10px';
-                    contextDiv.style.background = '#f0f4ff';
-                    contextDiv.style.borderRadius = '6px';
-                    contextDiv.style.fontSize = '13px';
-                    contextDiv.style.color = '#495057';
-                    contextDiv.style.borderLeft = '3px solid #667eea';
+                    contextDiv.className = 'node-context';
                     contextDiv.replaceChildren(sanitizeHtmlToFragment(contextInfo));
                     node.appendChild(contextDiv);
                 }
@@ -871,8 +1161,16 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
 
             // Imagen si existe
             if (step.imageUrl) {
+                const referenceToggle = document.createElement('button');
+                referenceToggle.type = 'button';
+                referenceToggle.className = 'node-reference-toggle';
+                referenceToggle.textContent = currentReferenceStepId === step.id ? 'Ocultar referencia 🖼️' : 'Ver referencia 🖼️';
+                referenceToggle.onclick = () => openReferenceForStep(step);
+                node.appendChild(referenceToggle);
+
                 const media = document.createElement('div');
                 media.className = 'node-media';
+                media.hidden = currentReferenceStepId !== step.id;
                 const img = document.createElement('img');
                 img.src = step.imageUrl;
                 img.alt = 'Referencia visual del paso';
@@ -888,7 +1186,7 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
             }
 
             // Opciones de decisión o loop
-            if ((step.tipo === 'decision' || step.tipo === 'loop') && index === currentStep && !decisions[step.id]) {
+            if ((step.tipo === 'decision' || step.tipo === 'loop') && index === currentStep && !decisions[step.id] && !shouldUseDecisionBanner(step, index)) {
                 const options = document.createElement('div');
                 options.className = 'decision-options';
                 
@@ -1193,8 +1491,9 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
         function updateStats() {
             document.getElementById('stepCount').textContent = completedSteps.size;
             const totalSteps = flowDefinition.filter(s => shouldShowStep(s)).length;
-            const percent = Math.round((completedSteps.size / totalSteps) * 100);
+            const percent = totalSteps > 0 ? Math.round((completedSteps.size / totalSteps) * 100) : 0;
             document.getElementById('progressPercent').textContent = percent;
+            updateHeaderProgress(percent);
         }
 
         function showToast(message) {
@@ -1360,6 +1659,19 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
                 const newId = ExpedienteManager.createExpediente(nombre, ref);
                 ExpedienteManager.saveFlowState(newId, { currentStep: 0, completedSteps: [], decisions: {}, stepNotes: {}, stepTimestamps: {}, stepStartTimes: {} });
                 ExpedienteManager.saveXMLData(newId, normalized);
+                if (window.DiagramManager && typeof window.DiagramManager.getCatalogEntries === 'function' && typeof window.DiagramManager.setDiagramForExpediente === 'function') {
+                    const catalog = window.DiagramManager.getCatalogEntries();
+                    if (Array.isArray(catalog) && catalog.length > 0) {
+                        const options = catalog.map((entry, index) => `${index}. ${entry.nombre}`).join('\n');
+                        const selected = prompt(
+                            `Selecciona el diagrama para el nuevo expediente:\n${options}\n\nDeja vacio o usa 0 para el predeterminado.`,
+                            '0'
+                        );
+                        const index = Number.parseInt(String(selected || '0').trim(), 10);
+                        const chosen = Number.isInteger(index) && catalog[index] ? catalog[index] : catalog[0];
+                        window.DiagramManager.setDiagramForExpediente(newId, chosen.id, { apply: false });
+                    }
+                }
                 ExpedienteManager.setActiveId(newId);
                 // Reload state
                 loadExpedienteData();
@@ -1399,17 +1711,7 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
         }
 
         function toggleTimeline() {
-            const content = document.getElementById('timelineContent');
-            const toggleText = document.getElementById('timelineToggleText');
-            
-            if (content.classList.contains('active')) {
-                content.classList.remove('active');
-                toggleText.textContent = 'Mostrar';
-            } else {
-                content.classList.add('active');
-                toggleText.textContent = 'Ocultar';
-                updateTimeline();
-            }
+            togglePanelState('timeline');
         }
 
         function loadExpedienteXML(event) {
@@ -2149,6 +2451,7 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
         document.getElementById('btnGuardarNotas').addEventListener('click', guardarNotas);
         document.getElementById('xmlFileInput').addEventListener('change', loadExpedienteXML);
         window.addEventListener('resize', () => requestAnimationFrame(renderFlow));
+        window.addEventListener('scroll', updateCurrentStepButtonState, { passive: true });
 
         // Atajos de teclado
         document.addEventListener('keydown', (e) => {
@@ -2165,14 +2468,19 @@ const GESTIONA_URL_PATTERN = 'https://gestiona-08.espublico.com/*';
         window.SidebarFlowAPI = {
             replaceFlowDefinition,
             getFlowDefinition: () => flowDefinition.slice(),
-            buildFlowDefinition
+            buildFlowDefinition,
+            togglePanelState,
+            getPanelState,
+            refreshUiPanels: syncAllPanelStates
         };
 
         // Inicializar
         loadData();
         loadExpedienteData(); // Cargar datos del expediente si existen
+        initUiControls();
         registerGestionaTabWatcher();
         maybeNotifyGestionaOpenExpediente();
+        maybeShowWelcomeModal();
         
         // Registrar inicio del paso actual si no existe
         const currentDef = flowDefinition[currentStep];

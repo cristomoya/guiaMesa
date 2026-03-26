@@ -32,10 +32,54 @@ const ExpedienteManager = (() => {
         localStorage.setItem(key, JSON.stringify(value));
     }
 
+    function collectRecoveredExpedientes(list) {
+        const recovered = new Map(
+            Array.isArray(list)
+                ? list.filter(entry => entry && entry.id).map(entry => [String(entry.id), entry])
+                : []
+        );
+        const idPatterns = [
+            /^em_state_(.+)$/,
+            /^em_data_(.+)$/,
+            /^em_checks_(.+)$/,
+            /^dm_diag_(.+)$/
+        ];
+        const activeId = getActiveId();
+        if (activeId && !recovered.has(activeId)) {
+            recovered.set(activeId, null);
+        }
+
+        for (let i = 0; i < localStorage.length; i += 1) {
+            const key = localStorage.key(i);
+            if (!key) continue;
+            const match = idPatterns.map((pattern) => key.match(pattern)).find(Boolean);
+            if (!match || !match[1]) continue;
+            const id = String(match[1]).trim();
+            if (!id || recovered.has(id)) continue;
+            recovered.set(id, null);
+        }
+
+        return Array.from(recovered.entries()).map(([id, entry], index) => {
+            if (entry && typeof entry === 'object') return entry;
+            const xmlData = readJSON(STORAGE_KEYS.DATA(id), null);
+            const recoveredName = String((xmlData && (xmlData.nombreProyecto || xmlData.expediente)) || '').trim();
+            const recoveredRef = String((xmlData && xmlData.expediente) || '').trim();
+            const updatedAt = Number((xmlData && xmlData.__xmlLoadedAt) || 0) || now();
+            return {
+                id,
+                nombre: recoveredName ? (xmlData.nombreProyecto || `Expediente ${recoveredRef}`) : `Expediente recuperado ${index + 1}`,
+                ref: recoveredRef,
+                creadoEn: updatedAt,
+                actualizadoEn: updatedAt
+            };
+        });
+    }
+
     // ── Lista de expedientes ─────────────────────────────────
 
     function getList() {
-        const list = readJSON(STORAGE_KEYS.LIST, []);
+        const stored = readJSON(STORAGE_KEYS.LIST, []);
+        const list = collectRecoveredExpedientes(Array.isArray(stored) ? stored : []);
         let changed = false;
 
         const normalized = list.map(entry => {
@@ -53,6 +97,11 @@ const ExpedienteManager = (() => {
             };
         });
 
+        if (!Array.isArray(stored) || stored.length !== normalized.length) {
+            changed = true;
+        } else if (stored.some((entry, index) => !entry || entry.id !== normalized[index].id)) {
+            changed = true;
+        }
         if (changed) saveList(normalized);
         return normalized;
     }
@@ -66,7 +115,17 @@ const ExpedienteManager = (() => {
     }
 
     function setActiveId(id) {
-        localStorage.setItem(STORAGE_KEYS.ACTIVE, id);
+        const normalizedId = id == null ? '' : String(id).trim();
+        if (normalizedId) {
+            localStorage.setItem(STORAGE_KEYS.ACTIVE, normalizedId);
+        } else {
+            localStorage.removeItem(STORAGE_KEYS.ACTIVE);
+        }
+        try {
+            window.dispatchEvent(new CustomEvent('em:active-expediente-changed', {
+                detail: { id: normalizedId || null }
+            }));
+        } catch (_) {}
     }
 
     // ── CRUD expedientes ─────────────────────────────────────

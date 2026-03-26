@@ -1,99 +1,138 @@
-﻿<!DOCTYPE html>
+<!-- Cambios aplicados: header con menu de opciones y barra de progreso, nueva barra de controles/toolbar, paneles colapsables, modal de bienvenida, banner de decisiones y boton flotante para puntos de control. -->
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Seguimiento actividades de la mesa de contratación</title>
+    <title>Sistema de Seguimiento actividades de la mesa de contratacion</title>
     <link rel="stylesheet" href="sidebar.css">
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Sistema de Seguimiento de actividades de la mesa de contratación</h1>
-            
-            
-            <div class="phase-progress">
-                <h3>Progreso por Fases</h3>
-                <div class="phases-grid" id="phasesGrid"></div>
-            </div>
-        </div>
-
-        <div class="controls">
-            <button id="btnRetroceder" class="btn btn-secondary">
-                <span>◀</span> Retroceder
-            </button>
-            <button id="btnContinuar" class="btn btn-primary">
-                <span>▶</span> Continuar
-            </button>
-            <button id="btnReiniciar" class="btn btn-danger">
-                <span>🔄</span> Reiniciar
-            </button>
-            <div class="jump-controls">
-                <label for="jumpStepSelect">Ir a paso:</label>
-                <select id="jumpStepSelect" class="jump-step-select" aria-label="Seleccionar paso activo"></select>
-                <button id="btnIrAPaso" class="btn btn-secondary">Ir</button>
-            </div>
-            
-            <div class="stats">
-                <div class="stat-item">
-                    <span>✅</span>
-                    <span id="stepCount">0</span> pasos
-                </div>
-                <div class="stat-item">
-                    <span>📊</span>
-                    <span id="progressPercent">0</span>%
-                </div>
-            </div>
-        </div>
-
-        <div class="content">
-            <div class="expediente-container">
-                <div class="expediente-header">
-                <h3>📄 Datos del Expediente</h3>
-                    <div class="expediente-upload-btn">
-                        <input type="file" id="xmlFileInput" accept=".xml">
-                        <label for="xmlFileInput" class="expediente-upload-label">
-                           📄  Cargar XML
-                        </label>
-                    </div>
-                </div>
-                <div class="expediente-info" id="expedienteInfo">
-                    <div class="expediente-grid" id="expedienteGrid"></div>
-                    <div class="expediente-highlights" id="expedienteHighlights"></div>
-                    <div class="expediente-actions">
-                        <button id="btnClearExpediente" class="btn-clear-expediente">
-                            🗑️ Limpiar Datos
+            <div class="header-top">
+                <h1>Sistema de Seguimiento de actividades de la mesa de contratacion</h1>
+                <div class="header-menu">
+                    <button id="btnOptionsMenu" class="icon-btn icon-btn-header" type="button" aria-haspopup="true" aria-expanded="false" title="Opciones">
+                        <span aria-hidden="true">⚙️</span>
+                    </button>
+                    <div id="optionsMenu" class="options-menu" role="menu" aria-label="Opciones">
+                        <button id="btnReiniciar" class="options-menu-item danger" type="button" role="menuitem">
+                            <span aria-hidden="true">🔄</span>
+                            <span>Reiniciar</span>
                         </button>
                     </div>
                 </div>
             </div>
+            <div class="phase-progress">
+                <h3>Progreso por Fases</h3>
+                <div class="phases-grid" id="phasesGrid"></div>
+            </div>
+            <div class="header-progress" id="headerProgress" title="0%">
+                <div class="header-progress-bar" id="headerProgressBar"></div>
+            </div>
+        </div>
 
-            <div class="legend">
-                <h3>📖 Guía de Uso</h3>
-                <div style="line-height: 2;">
-                    <p><strong>📄 Expediente XML:</strong> Carga el XML para ver datos contextuales en cada paso</p>
-                    <p><strong>📍 Paso actual:</strong> Borde morado con animación - haz click para completar</p>
-                    <p><strong>✅ Completados:</strong> Fondo verde</p>
-                    <p><strong>❓ Decisiones:</strong> Fondo amarillo - elige una opción</p>
-                    <p><strong>🔄 Bucles:</strong> Fondo azul - puede repetirse</p>
-                    <p><strong>⚡ Sistema:</strong> Se completan automáticamente</p>
-                    <p><strong>🔹 Separadores:</strong> Indican cambio de fase del proceso</p>
-                    <p><strong>⌨️ Atajos:</strong> Usa ← y → para navegar entre pasos</p>
+        <div class="controls">
+            <div class="controls-main">
+                <button id="btnRetroceder" class="btn btn-secondary btn-nav" type="button">
+                    <span>◀</span> Retroceder
+                </button>
+                <button id="btnPasoActual" class="btn btn-secondary btn-current-step" type="button">
+                    <span>📍</span> Paso actual
+                </button>
+                <button id="btnContinuar" class="btn btn-primary btn-nav" type="button">
+                    <span>▶</span> Continuar
+                </button>
+            </div>
+            <div class="controls-secondary">
+                <div class="jump-controls">
+                    <label for="jumpStepSelect">Ir a paso:</label>
+                    <select id="jumpStepSelect" class="jump-step-select" aria-label="Seleccionar paso activo"></select>
+                    <button id="btnIrAPaso" class="btn btn-secondary" type="button">Ir</button>
+                </div>
+                <div class="flow-view-toggle">
+                    <label class="view-switch" for="flowViewModeToggle">
+                        <input id="flowViewModeToggle" type="checkbox" aria-label="Alternar entre vista swimlanes y vista lineal">
+                        <span class="view-switch-track"></span>
+                        <span class="view-switch-label">Vista swimlanes / Vista lineal</span>
+                    </label>
+                </div>
+                <div class="stats" aria-hidden="true">
+                    <div class="stat-item">
+                        <span>✅</span>
+                        <span id="stepCount">0</span> pasos
+                    </div>
+                    <div class="stat-item">
+                        <span>📊</span>
+                        <span id="progressPercent">0</span>%
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <div class="timeline-container">
-                <div class="timeline-header">
-                    <h3> ⏲️Timeline del Proceso</h3>
-                    <button id="btnToggleTimeline" class="timeline-toggle">
+        <div id="decisionBanner" class="decision-banner" hidden></div>
+
+        <div class="panel-toolbar" id="panelToolbar" aria-label="Paneles secundarios">
+            <button class="panel-tool-btn" type="button" data-panel-target="expediente" title="Datos del expediente">📄 <span>Expediente</span></button>
+            <button class="panel-tool-btn" type="button" data-panel-target="help" title="Ayuda">❓ <span>Ayuda</span></button>
+            <button class="panel-tool-btn" type="button" data-panel-target="timeline" title="Timeline">⏲️ <span>Timeline</span></button>
+            <button class="panel-tool-btn" type="button" data-panel-target="expedientes" title="Expedientes">📁 <span>Expedientes</span></button>
+            <button class="panel-tool-btn" type="button" data-panel-target="diagram" title="Diagrama de flujo">🔀 <span>Diagrama</span></button>
+        </div>
+
+        <div class="content">
+            <section class="expediente-container collapsible-panel" data-panel-key="expediente">
+                <div class="expediente-header panel-header">
+                    <button class="panel-toggle" type="button" data-panel-target="expediente" aria-expanded="false">
+                        <span>📄 Datos del Expediente</span>
+                        <span class="panel-toggle-icon" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="expediente-upload-btn">
+                        <input type="file" id="xmlFileInput" accept=".xml">
+                        <label for="xmlFileInput" class="expediente-upload-label">
+                           📄 Cargar XML
+                        </label>
+                    </div>
+                </div>
+                <div class="panel-body expediente-info" id="expedienteInfo">
+                    <div class="expediente-grid" id="expedienteGrid"></div>
+                    <div class="expediente-highlights" id="expedienteHighlights"></div>
+                    <div class="expediente-actions">
+                        <button id="btnClearExpediente" class="btn-clear-expediente" type="button">
+                            🗑️ Limpiar Datos
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="legend collapsible-panel" data-panel-key="help">
+                <div class="panel-header">
+                    <button class="panel-toggle" type="button" data-panel-target="help" aria-expanded="false">
+                        <span>❓ Guia de Uso</span>
+                        <span class="panel-toggle-icon" aria-hidden="true">▾</span>
+                    </button>
+                </div>
+                <div class="panel-body">
+                    <p>La ayuda rapida se muestra como bienvenida la primera vez. Puedes volver a abrirla desde el icono ❓.</p>
+                </div>
+            </section>
+
+            <section class="timeline-container collapsible-panel" data-panel-key="timeline">
+                <div class="timeline-header panel-header">
+                    <button class="panel-toggle" type="button" data-panel-target="timeline" aria-expanded="false">
+                        <span>⏲️ Timeline del Proceso</span>
+                        <span class="panel-toggle-icon" aria-hidden="true">▾</span>
+                    </button>
+                    <button id="btnToggleTimeline" class="timeline-toggle" type="button">
                         <span id="timelineToggleText">Mostrar</span>
                     </button>
                 </div>
-                <div class="timeline-content" id="timelineContent">
+                <div class="panel-body timeline-content" id="timelineContent">
                     <div class="timeline-stats" id="timelineStats"></div>
                     <div class="timeline-list" id="timelineList"></div>
                 </div>
-            </div>
+            </section>
 
             <div id="flowchart"></div>
         </div>
@@ -103,16 +142,29 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="modalTitle">Notas</h2>
-                <button id="btnCerrarModal" class="close-btn">×</button>
+                <button id="btnCerrarModal" class="close-btn" type="button">×</button>
             </div>
 
             <div class="form-group">
                 <label for="notasTextarea">Notas y Observaciones:</label>
-                <textarea id="notasTextarea" placeholder="Añade notas sobre este paso..."></textarea>
+                <textarea id="notasTextarea" placeholder="Anade notas sobre este paso..."></textarea>
             </div>
 
             <div class="modal-actions">
-                <button id="btnGuardarNotas" class="btn btn-primary">Guardar</button>
+                <button id="btnGuardarNotas" class="btn btn-primary" type="button">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="welcomeModal" class="modal welcome-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Bienvenida</h2>
+                <button id="btnCerrarWelcomeModal" class="close-btn" type="button">×</button>
+            </div>
+            <div id="welcomeModalBody" class="welcome-modal-body"></div>
+            <div class="modal-actions">
+                <button id="btnWelcomeModalClose" class="btn btn-primary" type="button">Empezar</button>
             </div>
         </div>
     </div>
@@ -121,7 +173,9 @@
         <span id="toastMessage"></span>
     </div>
 
-    <script id="plantumlSource" type="text/plain" data-src="src/abiertoSimplificado.puml"></script>
+    <button id="btnQuickCheckpoint" class="quick-checkpoint-btn" type="button" hidden>💾 Guardar punto</button>
+
+    <script id="plantumlSource" type="text/plain" data-src="src/mesaContratacion.puml"></script>
     <script src="expediente-manager.js"></script>
     <script src="plazo-timer.js"></script>
     <script src="sidebar-patch.js"></script>
@@ -129,4 +183,3 @@
     <script src="diagram-manager.js"></script>
 </body>
 </html>
-

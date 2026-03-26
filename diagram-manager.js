@@ -1,4 +1,5 @@
 // ============================================================
+// Cambios aplicados: panel del diagrama integrado con el sistema de paneles colapsables y arranque colapsado por defecto.
 // diagram-manager.js  v2
 // Permite asociar un fichero .puml a cada expediente y
 // reconstruir el flowDefinition dinámicamente al cambiar.
@@ -55,6 +56,13 @@
         saveRegistry(getRegistry().filter(r => r.id !== id));
     }
 
+    function getCatalogEntries() {
+        return [
+            { ...BUILT_IN_META, source: BUILT_IN_SOURCE },
+            ...getRegistry()
+        ];
+    }
+
     // ── Diagrama por expediente ──────────────────────────────
 
     function getActiveDiagram(expId) {
@@ -66,6 +74,33 @@
     }
     function clearActiveDiagram(expId) {
         localStorage.removeItem(DIAG_KEY(expId));
+    }
+
+    function setDiagramForExpediente(expId, diagramId, options = {}) {
+        const normalizedExpId = String(expId || '').trim();
+        const normalizedDiagramId = String(diagramId || '__builtin__').trim() || '__builtin__';
+        const shouldApply = options.apply !== false && normalizedExpId === getActiveExpId();
+
+        if (!normalizedExpId) return false;
+
+        if (normalizedDiagramId === '__builtin__') {
+            clearActiveDiagram(normalizedExpId);
+            if (shouldApply) {
+                applyDiagram(BUILT_IN_SOURCE, { force: true });
+            }
+            refreshPanel();
+            return true;
+        }
+
+        const found = getRegistry().find(entry => entry.id === normalizedDiagramId);
+        if (!found || !found.source) return false;
+
+        setActiveDiagram(normalizedExpId, { ...found, source: undefined }, found.source);
+        if (shouldApply) {
+            applyDiagram(found.source, { force: true });
+        }
+        refreshPanel();
+        return true;
     }
 
     // ── Aplicar diagrama ─────────────────────────────────────
@@ -568,14 +603,9 @@
 
                     openPreviewModal(entry.nombre || 'Diagrama', sourceToApply, () => {
                         if (isBuiltin) {
-                            clearActiveDiagram(expId);
-                            applyDiagram(BUILT_IN_SOURCE);
+                            setDiagramForExpediente(expId, '__builtin__');
                         } else {
-                            const found = reg.find(r => r.id === entry.id);
-                            if (found) {
-                                setActiveDiagram(expId, { ...found, source: undefined }, found.source);
-                                applyDiagram(found.source);
-                            }
+                            setDiagramForExpediente(expId, entry.id);
                         }
                         refreshPanel();
                         showDmToast(`OK: Diagrama "${entry.nombre}" aplicado`);
@@ -640,8 +670,7 @@
             const expId = getActiveExpId();
             refreshPanel();
             openPreviewModal(meta.nombre, source, () => {
-                setActiveDiagram(expId, meta, source);
-                applyDiagram(source, { force: true });
+                setDiagramForExpediente(expId, meta.id);
                 refreshPanel();
                 showDmToast(`OK: Diagrama "${meta.nombre}" cargado y aplicado`);
             });
@@ -854,7 +883,14 @@
     }
 
     // ── API pública ───────────────────────────────────────────
-    window.DiagramManager = { loadDiagramForExpediente, applyDiagram, getActiveDiagram, refreshPanel };
+    window.DiagramManager = {
+        loadDiagramForExpediente,
+        applyDiagram,
+        getActiveDiagram,
+        getCatalogEntries,
+        setDiagramForExpediente,
+        refreshPanel
+    };
 
     init();
 
